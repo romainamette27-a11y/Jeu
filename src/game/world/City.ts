@@ -53,33 +53,38 @@ export class City {
 
           const vertical = new THREE.PlaneGeometry(0.3, dashLength);
           vertical.rotateX(-Math.PI / 2);
-          vertical.translate(pos, 0.02, along);
+          vertical.translate(pos, 0.05, along);
           pieces.push(vertical);
 
           const horizontal = new THREE.PlaneGeometry(0.3, dashLength);
           horizontal.rotateX(-Math.PI / 2);
           horizontal.rotateY(Math.PI / 2);
-          horizontal.translate(along, 0.02, pos);
+          horizontal.translate(along, 0.05, pos);
           pieces.push(horizontal);
         }
 
         for (const off of [-edgeOffset, edgeOffset]) {
           const edgeVertical = new THREE.PlaneGeometry(0.22, segLen);
           edgeVertical.rotateX(-Math.PI / 2);
-          edgeVertical.translate(pos + off, 0.02, center);
+          edgeVertical.translate(pos + off, 0.05, center);
           pieces.push(edgeVertical);
 
           const edgeHorizontal = new THREE.PlaneGeometry(0.22, segLen);
           edgeHorizontal.rotateX(-Math.PI / 2);
           edgeHorizontal.rotateY(Math.PI / 2);
-          edgeHorizontal.translate(center, 0.02, pos + off);
+          edgeHorizontal.translate(center, 0.05, pos + off);
           pieces.push(edgeHorizontal);
         }
       }
     }
 
     const merged = mergeDashes(pieces);
-    const material = new THREE.MeshBasicMaterial({ color: 0xd8d8d2 });
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xd8d8d2,
+      polygonOffset: true,
+      polygonOffsetFactor: -4,
+      polygonOffsetUnits: -4
+    });
     const marks = new THREE.Mesh(merged, material);
     marks.renderOrder = 1;
     this.group.add(marks);
@@ -160,11 +165,12 @@ function rand(min: number, max: number): number {
 }
 
 function mergeDashes(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  const expanded = geos.map((g) => (g.index ? g.toNonIndexed() : g));
   let total = 0;
-  for (const g of geos) total += g.getAttribute('position').count;
+  for (const g of expanded) total += g.getAttribute('position').count;
   const pos = new Float32Array(total * 3);
   let offset = 0;
-  for (const g of geos) {
+  for (const g of expanded) {
     const p = g.getAttribute('position').array as ArrayLike<number>;
     pos.set(p, offset);
     offset += p.length;

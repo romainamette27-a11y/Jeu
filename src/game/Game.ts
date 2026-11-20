@@ -39,7 +39,7 @@ export class Game {
     this.renderer.toneMappingExposure = 1.05;
     container.appendChild(this.renderer.domElement);
 
-    this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 1200);
+    this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 1.0, 1200);
 
     this.city = new City();
     this.scene.add(this.city.group);
