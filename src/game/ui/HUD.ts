@@ -5,6 +5,8 @@ export class HUD {
   private speedValue: HTMLElement;
   private gearValue: HTMLElement;
   private hint: HTMLElement;
+  private sirenBtn: HTMLButtonElement;
+  private sirenHandler: ((on: boolean) => void) | null = null;
   private hintTimer: number | null = null;
   private minutes = CONFIG.shift.startMinutes;
 
@@ -24,6 +26,17 @@ export class HUD {
 
     const topRight = document.createElement('div');
     topRight.className = 'hud-top-right';
+
+    const sirenBtn = document.createElement('button');
+    sirenBtn.id = 'hud-siren';
+    sirenBtn.className = 'hud-btn';
+    sirenBtn.textContent = '🚨';
+    sirenBtn.addEventListener('click', () => {
+      sirenBtn.classList.toggle('pressed');
+      this.sirenHandler?.(sirenBtn.classList.contains('pressed'));
+    });
+    this.sirenBtn = sirenBtn;
+
     const fsBtn = document.createElement('button');
     fsBtn.className = 'hud-btn';
     fsBtn.textContent = '⛶';
@@ -34,7 +47,7 @@ export class HUD {
         void document.documentElement.requestFullscreen().catch(() => {});
       }
     });
-    topRight.appendChild(fsBtn);
+    topRight.append(sirenBtn, fsBtn);
 
     const speed = document.createElement('div');
     speed.id = 'hud-speed';
@@ -54,6 +67,14 @@ export class HUD {
     this.shiftValue = shift.querySelector('.value')!;
     this.speedValue = speed.querySelector('.speed-value')!;
     this.gearValue = speed.querySelector('#hud-gear')!;
+  }
+
+  setSirenHandler(handler: (on: boolean) => void): void {
+    this.sirenHandler = handler;
+  }
+
+  setSirenVisual(on: boolean): void {
+    this.sirenBtn.classList.toggle('pressed', on);
   }
 
   update(dt: number, speedMs: number, reverse: boolean): void {

@@ -31,31 +31,54 @@ export class City {
   }
 
   private buildRoadMarkings(): void {
-    const dashes: THREE.BufferGeometry[] = [];
+    const pieces: THREE.BufferGeometry[] = [];
+    const n = CONFIG.city.blocksPerSide;
+    const lines = n + 1;
+    const roadHalf = CONFIG.city.roadWidth / 2;
+    const edgeOffset = roadHalf - 0.8;
     const dashLength = 3.0;
-    const step = 8.0;
-    const lines = CONFIG.city.blocksPerSide + 1;
-    const count = Math.floor((CONFIG.city.worldHalf * 2 - CONFIG.city.roadWidth) / step);
+    const dashStep = 8.0;
+    const segmentHalf = CONFIG.city.blockSize / 2 - 2.0;
 
     for (let k = 0; k < lines; k++) {
       const pos = linePosition(k);
-      for (let d = -count / 2; d < count / 2; d++) {
-        const z = d * step;
+      for (let c = 0; c < n; c++) {
+        const center = blockCenter(c);
 
-        const vertical = new THREE.PlaneGeometry(0.32, dashLength);
-        vertical.rotateX(-Math.PI / 2);
-        vertical.translate(pos, 0.02, z);
-        dashes.push(vertical);
+        const segLen = segmentHalf * 2;
+        const dashCount = Math.max(1, Math.floor((segLen - dashLength) / dashStep));
+        const span = (dashCount - 1) * dashStep;
+        for (let d = 0; d < dashCount; d++) {
+          const along = center - span / 2 + d * dashStep;
 
-        const horizontal = new THREE.PlaneGeometry(0.32, dashLength);
-        horizontal.rotateX(-Math.PI / 2);
-        horizontal.rotateY(Math.PI / 2);
-        horizontal.translate(z, 0.02, pos);
-        dashes.push(horizontal);
+          const vertical = new THREE.PlaneGeometry(0.3, dashLength);
+          vertical.rotateX(-Math.PI / 2);
+          vertical.translate(pos, 0.02, along);
+          pieces.push(vertical);
+
+          const horizontal = new THREE.PlaneGeometry(0.3, dashLength);
+          horizontal.rotateX(-Math.PI / 2);
+          horizontal.rotateY(Math.PI / 2);
+          horizontal.translate(along, 0.02, pos);
+          pieces.push(horizontal);
+        }
+
+        for (const off of [-edgeOffset, edgeOffset]) {
+          const edgeVertical = new THREE.PlaneGeometry(0.22, segLen);
+          edgeVertical.rotateX(-Math.PI / 2);
+          edgeVertical.translate(pos + off, 0.02, center);
+          pieces.push(edgeVertical);
+
+          const edgeHorizontal = new THREE.PlaneGeometry(0.22, segLen);
+          edgeHorizontal.rotateX(-Math.PI / 2);
+          edgeHorizontal.rotateY(Math.PI / 2);
+          edgeHorizontal.translate(center, 0.02, pos + off);
+          pieces.push(edgeHorizontal);
+        }
       }
     }
 
-    const merged = mergeDashes(dashes);
+    const merged = mergeDashes(pieces);
     const material = new THREE.MeshBasicMaterial({ color: 0xd8d8d2 });
     const marks = new THREE.Mesh(merged, material);
     marks.renderOrder = 1;

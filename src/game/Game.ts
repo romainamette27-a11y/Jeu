@@ -6,6 +6,7 @@ import { PoliceCar } from './vehicle/PoliceCar';
 import { ChaseCamera } from './camera/ChaseCamera';
 import { InputManager } from './input/InputManager';
 import { VirtualControls } from './input/VirtualControls';
+import { Siren } from './audio/Siren';
 import { HUD } from './ui/HUD';
 
 const tmpVec = new THREE.Vector3();
@@ -23,6 +24,7 @@ export class Game {
   private input = new InputManager();
   private controls: VirtualControls | null = null;
   private hud: HUD;
+  private siren = new Siren();
 
   private rafId = 0;
   private running = true;
@@ -51,6 +53,8 @@ export class Game {
     this.hud = new HUD();
 
     this.input.attach();
+    window.addEventListener('keydown', this.onKeyDown);
+    this.hud.setSirenHandler((on) => this.applySiren(on));
     if (this.isTouchDevice()) {
       this.controls = new VirtualControls(this.input);
     }
@@ -60,13 +64,25 @@ export class Game {
 
     this.hud.showHint(
       this.controls
-        ? 'Gauche : volant — À droite : gaz / frein — Bonne patrouille, officier !'
-        : 'ZQSD / Flèches pour conduire — Espace : frein à main',
+        ? 'Gauche : volant — À droite : gaz / frein — 🚨 : sirène et gyrophares'
+        : 'ZQSD / Flèches pour conduire — Espace : frein à main — F : sirène',
       7000
     );
 
     this.loop();
   }
+
+  private applySiren(on: boolean): void {
+    this.car.lightsOn = on;
+    this.siren.setEnabled(on);
+    this.hud.setSirenVisual(on);
+  }
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (e.code === 'KeyF') {
+      this.applySiren(!this.car.lightsOn);
+    }
+  };
 
   private isTouchDevice(): boolean {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -81,8 +97,10 @@ export class Game {
   private onVisibility = () => {
     if (document.hidden) {
       this.running = false;
+      this.siren.suspend();
     } else {
       this.running = true;
+      this.siren.resume();
       this.clock.getDelta();
     }
   };
@@ -151,8 +169,10 @@ export class Game {
   dispose(): void {
     cancelAnimationFrame(this.rafId);
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.input.detach();
+    this.siren.dispose();
     this.renderer.dispose();
     this.container.removeChild(this.renderer.domElement);
   }

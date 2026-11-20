@@ -32,6 +32,7 @@ npm run preview    # prévisualise le build
 | Frein | bouton FREIN | S / ↓ |
 | Marche arrière | FREIN à l'arrêt | S / ↓ à l'arrêt |
 | Frein à main | bouton FREIN À MAIN | Espace |
+| Gyrophares + sirène | bouton 🚨 (en haut à droite) | F |
 
 ## Feuille de route
 

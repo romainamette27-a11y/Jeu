@@ -11,6 +11,8 @@ export interface DriveInput {
 export class PoliceCar {
   readonly group = new THREE.Group();
 
+  lightsOn = false;
+
   pos = new THREE.Vector2(0, -150);
   heading = 0;
   speed = 0;
@@ -53,12 +55,12 @@ export class PoliceCar {
     this.group.add(lowerTrim);
 
     const hood = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.16, 1.5), black);
-    hood.position.set(0, 1.04, -1.5);
+    hood.position.set(0, 1.04, 1.5);
     hood.castShadow = true;
     this.group.add(hood);
 
     const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.16, 1.1), black);
-    trunk.position.set(0, 1.04, 1.72);
+    trunk.position.set(0, 1.04, -1.72);
     trunk.castShadow = true;
     this.group.add(trunk);
 
@@ -73,14 +75,14 @@ export class PoliceCar {
     this.group.add(roof);
 
     const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.26, 0.34), black);
-    bumper.position.set(0, 0.5, -2.42);
+    bumper.position.set(0, 0.5, 2.42);
     this.group.add(bumper);
     const bumperRear = bumper.clone();
-    bumperRear.position.z = 2.42;
+    bumperRear.position.z = -2.42;
     this.group.add(bumperRear);
 
     const grille = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 0.06), black);
-    grille.position.set(0, 0.8, -2.31);
+    grille.position.set(0, 0.8, 2.31);
     this.group.add(grille);
   }
 
@@ -112,7 +114,7 @@ export class PoliceCar {
       this.group.add(pivot);
 
       this.allWheels.push(wheel);
-      if (z < 0) this.frontPivots.push(pivot);
+      if (z > 0) this.frontPivots.push(pivot);
     }
   }
 
@@ -147,8 +149,8 @@ export class PoliceCar {
   update(dt: number, input: DriveInput): void {
     const speedAbs = Math.abs(this.speed);
 
-    const maxSteer = this.c.steering.maxAngle / (1 + speedAbs * 0.055);
-    const steerTarget = input.steer * maxSteer;
+    const maxSteer = this.c.steering.maxAngle / (1 + speedAbs * this.c.highSpeedSteerFalloff);
+    const steerTarget = -input.steer * maxSteer;
     this.steerAngle += (steerTarget - this.steerAngle) * Math.min(1, dt * this.c.steering.response);
 
     let accel = 0;
@@ -194,6 +196,12 @@ export class PoliceCar {
     this.wheelSpin += (this.speed / this.c.wheelRadius) * dt;
     for (const wheel of this.allWheels) wheel.rotation.x = this.wheelSpin;
     for (const pivot of this.frontPivots) pivot.rotation.y = this.steerAngle;
+
+    if (!this.lightsOn) {
+      this.barRed.emissiveIntensity = 0.05;
+      this.barBlue.emissiveIntensity = 0.05;
+      return;
+    }
 
     const t = performance.now() * 0.0045;
     const toggle = Math.floor(t) % 2 === 0;

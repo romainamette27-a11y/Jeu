@@ -14,10 +14,11 @@ export const CONFIG = {
     dragCoef: 0.012,
     rollingDrag: 1.6,
     steering: {
-      maxAngle: 0.62,
-      response: 2.6
+      maxAngle: 0.72,
+      response: 3.8
     },
-    turnRate: 0.075,
+    turnRate: 0.12,
+    highSpeedSteerFalloff: 0.035,
     collisionRadius: 1.5,
     wheelRadius: 0.34
   },
