@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0a0d14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PatrolOps" />
+    <meta name="description" content="Simulateur de patrouille de police en 3D pour mobile" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <title>PatrolOps — Police Simulator</title>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="loading" aria-hidden="true">
+      <div class="loading-inner">
+        <div class="loading-badge">POLICE</div>
+        <div class="loading-title">PATROLOPS</div>
+        <div class="loading-sub">Chargement du secteur…</div>
+        <div class="loading-bar"><span></span></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
