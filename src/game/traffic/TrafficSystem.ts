@@ -11,7 +11,8 @@ const DIRV: readonly [number, number][] = [
 ];
 
 const LANE = 5;
-const TURN_RATE = 2.2;
+const TURN_RATE = 3.2;
+const ROAD_HALF = 8.5;
 
 interface TrafficCar {
   group: THREE.Group;
@@ -144,8 +145,15 @@ export class TrafficSystem {
   private setWaypoint(car: TrafficCar): void {
     const node = this.nodePos(car.nodeK, car.nodeJ);
     const right = DIRV[rightOf(car.dir)];
-    car.wx = node.x + DIRV[car.dir][0] * 16 + right[0] * LANE;
-    car.wz = node.y + DIRV[car.dir][1] * 16 + right[1] * LANE;
+    car.wx = node.x + DIRV[car.dir][0] * 12 + right[0] * LANE;
+    car.wz = node.y + DIRV[car.dir][1] * 12 + right[1] * LANE;
+  }
+
+  private lateralClamp(v: number): number {
+    const idx = Math.round(v / gridPitch() + CONFIG.city.blocksPerSide / 2);
+    const bounded = Math.max(0, Math.min(CONFIG.city.blocksPerSide, idx));
+    const line = linePosition(bounded);
+    return Math.max(line - ROAD_HALF, Math.min(line + ROAD_HALF, v));
   }
 
   private advance(car: TrafficCar): void {
@@ -184,6 +192,8 @@ export class TrafficSystem {
       car.heading += Math.max(-maxTurn, Math.min(maxTurn, diff));
 
       let target = car.cruise;
+      if (Math.abs(diff) > 0.22) target = Math.min(target, car.cruise * 0.4);
+
       const fwdX = Math.sin(car.heading);
       const fwdZ = Math.cos(car.heading);
 
@@ -210,6 +220,12 @@ export class TrafficSystem {
 
       car.x += fwdX * car.speed * dt;
       car.z += fwdZ * car.speed * dt;
+
+      if (car.dir === 0 || car.dir === 2) {
+        car.x = this.lateralClamp(car.x);
+      } else {
+        car.z = this.lateralClamp(car.z);
+      }
 
       const dx = car.wx - car.x;
       const dz = car.wz - car.z;

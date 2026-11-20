@@ -39,7 +39,7 @@ interface Call {
 export class Dispatch {
   private group = new THREE.Group();
   private calls: Call[] = [];
-  private nextIn = 12;
+  private nextIn = 18;
   private totalCalls = 0;
 
   constructor(
@@ -75,9 +75,9 @@ export class Dispatch {
     this.lastPlayerZ = car.pos.y;
 
     this.nextIn -= dt;
-    if (this.nextIn <= 0 && this.calls.length < 2) {
+    if (this.nextIn <= 0 && this.calls.length < 1) {
       this.spawnCall(minutes);
-      this.nextIn = 25 + Math.random() * 25;
+      this.nextIn = 40 + Math.random() * 30;
     }
 
     for (let i = this.calls.length - 1; i >= 0; i--) {

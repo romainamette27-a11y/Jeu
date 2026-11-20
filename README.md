@@ -36,11 +36,12 @@ npm run preview    # prévisualise le build
 
 ## Feuille de route
 
-- [x] **Phase 1 — Fondations 3D mobile** : ville (routes, marquages, immeubles, collision),
-      voiture de police (physique arcade, gyrophares), caméra de poursuite,
-      contrôles tactiles, HUD (horloge de shift, compteur), PWA installable
-- [ ] **Phase 2 — Système de patrouille** : trafic IA, radio (appels DCT qui tombent),
-      markers d'intervention, jour/nuit dynamique
+- [x] **Phase 1 — Fondations 3D mobile** : ville (routes, marquages de voies, immeubles, collision),
+      voiture de police (physique arcade, gyrophares + sirène), caméra de poursuite,
+      contrôles tactiles, HUD, PWA installable, hébergement GitHub Pages
+- [x] **Phase 2 — Système de patrouille** : trafic IA (conduite à droite, freinage),
+      radio DCT (appels variés avec bips), colonne + anneau d'intervention, GPS,
+      cycle jour/nuit (soleil, nuit bleutée, 98 lampadaires avec halos), XP d'intervention
 - [ ] **Phase 3 — Interventions variées** : contrôle routier, excès de vitesse, accidents,
       vols, arrestations — menus d'action (verbaliser, fouiller, menotter, renforts)
 - [ ] **Phase 4 — Progression réalistique** : fin de shift + bilan, XP, grades,

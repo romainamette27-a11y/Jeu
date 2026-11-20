@@ -147,10 +147,12 @@ export class HUD {
     msg.append(head, body);
     this.radioPanel.prepend(msg);
 
-    while (this.radioPanel.children.length > 3) {
+    while (this.radioPanel.children.length > 2) {
       this.radioPanel.removeChild(this.radioPanel.lastChild!);
     }
     window.setTimeout(() => msg.classList.add('shown'), 30);
+    window.setTimeout(() => msg.classList.add('fading'), 10000);
+    window.setTimeout(() => msg.remove(), 10700);
   }
 
   showHint(text: string, durationMs = 6000): void {
