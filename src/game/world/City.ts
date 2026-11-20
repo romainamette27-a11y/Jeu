@@ -81,6 +81,7 @@ export class City {
     const merged = mergeDashes(pieces);
     const material = new THREE.MeshBasicMaterial({
       color: 0xd8d8d2,
+      side: THREE.DoubleSide,
       polygonOffset: true,
       polygonOffsetFactor: -4,
       polygonOffsetUnits: -4
