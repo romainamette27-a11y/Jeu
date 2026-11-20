@@ -12,6 +12,13 @@ export class HUD {
   private sirenBtn: HTMLButtonElement;
   private sirenHandler: ((on: boolean) => void) | null = null;
   private hintTimer: number | null = null;
+  private exitBtn: HTMLButtonElement;
+  private exitHandler: (() => void) | null = null;
+  private intPanel: HTMLElement;
+  private intTitle: HTMLElement;
+  private logEl: HTMLElement;
+  private intActions: HTMLElement;
+  private actionHandler: ((key: string) => void) | null = null;
 
   constructor() {
     const hud = document.createElement('div');
@@ -84,9 +91,27 @@ export class HUD {
     this.hint = document.createElement('div');
     this.hint.id = 'hint';
 
+    this.exitBtn = document.createElement('button');
+    this.exitBtn.id = 'int-exit';
+    this.exitBtn.type = 'button';
+    this.exitBtn.textContent = '🚨 SORTIR DU VÉHICULE';
+    this.exitBtn.classList.add('hidden');
+    this.exitBtn.addEventListener('click', () => this.exitHandler?.());
+
+    this.intPanel = document.createElement('div');
+    this.intPanel.id = 'intervention';
+    this.intPanel.classList.add('hidden');
+    this.intTitle = document.createElement('div');
+    this.intTitle.className = 'int-title';
+    this.logEl = document.createElement('div');
+    this.logEl.className = 'int-log';
+    this.intActions = document.createElement('div');
+    this.intActions.className = 'int-actions';
+    this.intPanel.append(this.intTitle, this.logEl, this.intActions);
+
     hud.append(topLeft, topRight, this.gps, speed);
 
-    document.body.append(hud, this.radioPanel, this.hint);
+    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel);
 
     this.shiftValue = shift.querySelector('.value')!;
     this.speedValue = speed.querySelector('.speed-value')!;
@@ -121,16 +146,14 @@ export class HUD {
     this.callsValue.textContent = String(count);
   }
 
-  setTarget(relAngle: number | null, distance: number, onsite: boolean, onsiteProgress: number): void {
+  setTarget(relAngle: number | null, distance: number, onsite: boolean): void {
     if (relAngle === null) {
       this.gps.classList.add('hidden');
       return;
     }
     this.gps.classList.remove('hidden');
     this.gpsArrow.style.transform = `rotate(${-relAngle * (180 / Math.PI)}deg)`;
-    this.gpsDist.textContent = onsite
-      ? `SUR PLACE — ${Math.min(100, Math.round(onsiteProgress * 100))} %`
-      : `${Math.round(distance / 5) * 5} m`;
+    this.gpsDist.textContent = onsite ? 'SUR PLACE' : `${Math.round(distance / 5) * 5} m`;
   }
 
   radioPush(from: string, text: string): void {
@@ -160,5 +183,53 @@ export class HUD {
     this.hint.classList.add('visible');
     if (this.hintTimer !== null) window.clearTimeout(this.hintTimer);
     this.hintTimer = window.setTimeout(() => this.hint.classList.remove('visible'), durationMs);
+  }
+
+  showExit(handler: (() => void) | null): void {
+    if (handler === null) {
+      if (this.exitHandler !== null) {
+        this.exitHandler = null;
+        this.exitBtn.classList.add('hidden');
+      }
+      return;
+    }
+    if (this.exitHandler === null) this.exitBtn.classList.remove('hidden');
+    this.exitHandler = handler;
+  }
+
+  showIntervention(title: string): void {
+    this.intTitle.textContent = title;
+    this.logEl.innerHTML = '';
+    this.intActions.innerHTML = '';
+    this.intPanel.classList.remove('hidden');
+  }
+
+  closeIntervention(): void {
+    this.intPanel.classList.add('hidden');
+    this.intActions.innerHTML = '';
+  }
+
+  intLog(text: string, tone: 'info' | 'good' | 'bad'): void {
+    const line = document.createElement('div');
+    line.className = `int-line ${tone}`;
+    line.textContent = text;
+    this.logEl.append(line);
+    while (this.logEl.children.length > 7) {
+      this.logEl.removeChild(this.logEl.firstChild!);
+    }
+    this.logEl.scrollTop = this.logEl.scrollHeight;
+  }
+
+  setIntActions(actions: readonly { key: string; label: string }[], handler: (key: string) => void): void {
+    this.actionHandler = handler;
+    this.intActions.innerHTML = '';
+    for (const action of actions) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'int-btn';
+      btn.textContent = action.label;
+      btn.addEventListener('click', () => this.actionHandler?.(action.key));
+      this.intActions.append(btn);
+    }
   }
 }

@@ -26,6 +26,7 @@ interface TrafficCar {
   nodeJ: number;
   wx: number;
   wz: number;
+  waitTime: number;
 }
 
 const PALETTE = [0xc23b2e, 0x2d4fa1, 0xdedede, 0x2a2b2f, 0x9a9fa8, 0xb9832f, 0x3d7a45, 0x7a3d7a];
@@ -45,9 +46,13 @@ export class TrafficSystem {
   readonly group = new THREE.Group();
   readonly cars: TrafficCar[] = [];
   private readonly n = CONFIG.city.blocksPerSide;
+  private wheels: THREE.InstancedMesh;
+  private wheelDummy = new THREE.Object3D();
 
   constructor(count = 20) {
     this.buildCarMeshes(count);
+    this.wheels = this.buildWheels(count);
+    this.group.add(this.wheels);
   }
 
   private buildCarMeshes(count: number): void {
@@ -106,7 +111,8 @@ export class TrafficSystem {
         nodeK: k + DIRV[d][0],
         nodeJ: j + DIRV[d][1],
         wx: 0,
-        wz: 0
+        wz: 0,
+        waitTime: 0
       };
       this.setWaypoint(car);
       return car;
@@ -124,8 +130,28 @@ export class TrafficSystem {
       nodeK: 0,
       nodeJ: 0,
       wx: fallbackPos.x,
-      wz: fallbackPos.y
+      wz: fallbackPos.y,
+      waitTime: 0
     };
+  }
+
+  private buildWheels(count: number): THREE.InstancedMesh {
+    const geo = new THREE.CylinderGeometry(0.32, 0.32, 0.22, 12);
+    geo.rotateZ(Math.PI / 2);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.9 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count * 4);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    mesh.castShadow = true;
+
+    for (let i = 0; i < count * 4; i++) {
+      this.wheelDummy.position.set(0, 0.32, 0);
+      this.wheelDummy.rotation.set(0, 0, 0);
+      this.wheelDummy.updateMatrix();
+      mesh.setMatrixAt(i, this.wheelDummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
   }
 
   private nodeInBounds(k: number, j: number): boolean {
@@ -197,21 +223,28 @@ export class TrafficSystem {
       const fwdX = Math.sin(car.heading);
       const fwdZ = Math.cos(car.heading);
 
-      const check = (ox: number, oz: number, halfWidth: number) => {
+      const check = (ox: number, oz: number, halfWidth: number, lookahead: number) => {
         const rx = ox - car.x;
         const rz = oz - car.z;
         const ahead = rx * fwdX + rz * fwdZ;
         const lat = Math.abs(rx * fwdZ - rz * fwdX);
-        if (ahead > 0 && ahead < 16 && lat < halfWidth + 1.6) {
-          target = Math.min(target, car.cruise * Math.max(0, (ahead - 6) / 9));
-          if (ahead < 6) target = 0;
+        if (ahead > 0 && ahead < lookahead && lat < halfWidth) {
+          target = Math.min(target, car.cruise * Math.max(0, (ahead - 5) / (lookahead - 6)));
+          if (ahead < 5.5) target = 0;
         }
       };
 
-      check(px, pz, 1.1);
+      check(px, pz, 1.7, 14);
       for (const other of this.cars) {
         if (other === car) continue;
-        check(other.x, other.z, 1.0);
+        check(other.x, other.z, 1.5, 12);
+      }
+
+      if (car.speed < 0.4) {
+        car.waitTime += dt;
+        if (car.waitTime > 2.5) target = Math.max(target, 1.6);
+      } else {
+        car.waitTime = Math.max(0, car.waitTime - dt * 2);
       }
 
       const accel = target > car.speed ? 8 : -16;
@@ -234,5 +267,30 @@ export class TrafficSystem {
       car.group.position.set(car.x, 0, car.z);
       car.group.rotation.y = car.heading;
     }
+
+    this.updateWheels();
+  }
+
+  private updateWheels(): void {
+    const offsets = [
+      [-0.85, 1.35],
+      [0.85, 1.35],
+      [-0.85, -1.35],
+      [0.85, -1.35]
+    ];
+    for (let i = 0; i < this.cars.length; i++) {
+      const car = this.cars[i];
+      const c = Math.cos(car.heading);
+      const s = Math.sin(car.heading);
+      for (let w = 0; w < 4; w++) {
+        const ox = offsets[w][0];
+        const oz = offsets[w][1];
+        this.wheelDummy.position.set(car.x + ox * c + oz * s, 0.32, car.z - ox * s + oz * c);
+        this.wheelDummy.rotation.set(0, car.heading, 0);
+        this.wheelDummy.updateMatrix();
+        this.wheels.setMatrixAt(i * 4 + w, this.wheelDummy.matrix);
+      }
+    }
+    this.wheels.instanceMatrix.needsUpdate = true;
   }
 }

@@ -4,7 +4,7 @@ import type { PoliceCar } from '../vehicle/PoliceCar';
 import type { HUD } from '../ui/HUD';
 import type { Sfx } from '../audio/Sfx';
 
-interface CallType {
+export interface CallType {
   key: string;
   caller: string;
   label: string;
@@ -25,15 +25,14 @@ const CALL_TYPES: CallType[] = [
 
 const ONSITE_RADIUS = 14;
 const ONSITE_SPEED = 2.5;
-const ONSITE_DURATION = 4;
 
-interface Call {
+export interface Call {
   type: CallType;
   x: number;
   z: number;
+  onSite: boolean;
   beacon: THREE.Group;
   ring: THREE.Mesh;
-  onsiteTime: number;
 }
 
 export class Dispatch {
@@ -63,14 +62,10 @@ export class Dispatch {
     return best;
   }
 
-  targetOnsiteProgress(call: Call): number {
-    return call.onsiteTime / ONSITE_DURATION;
-  }
-
   private lastPlayerX = 0;
   private lastPlayerZ = 0;
 
-  update(dt: number, car: PoliceCar, minutes: number, onXp: (xp: number) => void): void {
+  update(dt: number, car: PoliceCar, minutes: number): void {
     this.lastPlayerX = car.pos.x;
     this.lastPlayerZ = car.pos.y;
 
@@ -80,23 +75,13 @@ export class Dispatch {
       this.nextIn = 40 + Math.random() * 30;
     }
 
-    for (let i = this.calls.length - 1; i >= 0; i--) {
-      const call = this.calls[i];
+    for (const call of this.calls) {
       const t = performance.now() * 0.001;
       call.ring.rotation.z = t * 1.2;
       call.beacon.position.y = Math.sin(t * 2) * 0.6;
 
       const dist = Math.hypot(call.x - car.pos.x, call.z - car.pos.y);
-      const arrived = dist < ONSITE_RADIUS && Math.abs(car.speed) < ONSITE_SPEED;
-
-      if (arrived) {
-        call.onsiteTime += dt;
-        if (call.onsiteTime >= ONSITE_DURATION) {
-          this.completeCall(i, onXp);
-        }
-      } else {
-        call.onsiteTime = Math.max(0, call.onsiteTime - dt * 2);
-      }
+      call.onSite = dist < ONSITE_RADIUS && Math.abs(car.speed) < ONSITE_SPEED;
     }
   }
 
@@ -135,7 +120,7 @@ export class Dispatch {
     beacon.position.set(pos.x, 0, pos.z);
     this.group.add(beacon);
 
-    this.calls.push({ type, x: pos.x, z: pos.z, beacon, ring, onsiteTime: 0 });
+    this.calls.push({ type, x: pos.x, z: pos.z, onSite: false, beacon, ring });
     this.totalCalls++;
 
     const h = Math.floor(minutes / 60);
@@ -164,8 +149,10 @@ export class Dispatch {
     return null;
   }
 
-  private completeCall(index: number, onXp: (xp: number) => void): void {
-    const call = this.calls[index];
+  finishCall(call: Call): void {
+    const index = this.calls.indexOf(call);
+    if (index === -1) return;
+
     this.group.remove(call.beacon);
     call.beacon.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
@@ -175,8 +162,7 @@ export class Dispatch {
     });
     this.calls.splice(index, 1);
 
-    onXp(call.type.xp);
-    this.hud.showHint(`✓ Intervention traitée : ${call.type.label} (+${call.type.xp} XP)`, 4000);
+    this.hud.radioPush('Centrale DCT', `Code 4 sur ${call.type.label.toLowerCase()}. Excellent travail, officier.`);
     this.hud.setCalls(this.calls.length);
     this.sfx.complete();
   }

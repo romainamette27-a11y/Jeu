@@ -409,3 +409,102 @@ body {
     display: none;
   }
 }
+
+/* ---------- Intervention ---------- */
+#int-exit {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(170px + var(--safe-b));
+  z-index: 14;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(110, 235, 120, 0.6);
+  background: rgba(10, 24, 18, 0.8);
+  color: #9fffae;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: int-exit-pulse 1.6s ease-in-out infinite;
+}
+#int-exit.hidden {
+  display: none;
+}
+@keyframes int-exit-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(110, 235, 120, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(110, 235, 120, 0);
+  }
+}
+
+#intervention {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(14px + var(--safe-b));
+  z-index: 16;
+  width: min(92vw, 520px);
+  max-height: 52vh;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+#intervention.hidden {
+  display: none;
+}
+.int-title {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  color: #ffd88a;
+  text-align: center;
+}
+.int-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 18vh;
+  overflow-y: auto;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.int-line {
+  color: var(--hud-text);
+}
+.int-line.good {
+  color: #9fffae;
+}
+.int-line.bad {
+  color: #ff9a8f;
+}
+.int-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.int-btn {
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--hud-text);
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1.2;
+  text-align: center;
+}
+.int-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+}

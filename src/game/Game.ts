@@ -4,9 +4,12 @@ import { City } from './world/City';
 import { StreetLamps } from './world/StreetLamps';
 import { SkyAndLights } from './world/SkyAndLights';
 import { PoliceCar } from './vehicle/PoliceCar';
+import type { DriveInput } from './input/InputManager';
 import { TrafficSystem } from './traffic/TrafficSystem';
 import { Dispatch } from './dispatch/Dispatch';
-import { ChaseCamera } from './camera/ChaseCamera';
+import { ChaseCamera, FollowTarget, DRIVING_RIG, FOOT_RIG } from './camera/ChaseCamera';
+import { Officer } from './officer/Officer';
+import { InterventionSystem } from './dispatch/InterventionSystem';
 import { InputManager } from './input/InputManager';
 import { VirtualControls } from './input/VirtualControls';
 import { Siren } from './audio/Siren';
@@ -33,6 +36,10 @@ export class Game {
   private hud: HUD;
   private siren = new Siren();
   private sfx = new Sfx();
+  private officer = new Officer();
+  private intervention: InterventionSystem;
+  private readonly idleInput: DriveInput = { steer: 0, throttle: 0, brake: 1, handbrake: true };
+  private readonly carFollow: FollowTarget = { x: 0, z: 0, heading: 0 };
 
   private rafId = 0;
   private running = true;
@@ -62,10 +69,32 @@ export class Game {
 
     this.traffic = new TrafficSystem();
     this.scene.add(this.traffic.group);
-    this.chaseCam = new ChaseCamera(this.camera, this.car);
+
+    this.officer.group.visible = false;
+    this.scene.add(this.officer.group);
 
     this.hud = new HUD();
     this.dispatch = new Dispatch(this.scene, this.hud, this.sfx);
+
+    this.intervention = new InterventionSystem(
+      this.scene,
+      this.hud,
+      this.officer,
+      (call) => {
+        this.xp += call.type.xp;
+        this.hud.setXP(this.xp);
+        this.dispatch.finishCall(call);
+      },
+      (xp) => {
+        this.xp += xp;
+        this.hud.setXP(this.xp);
+      }
+    );
+
+    this.carFollow.x = this.car.pos.x;
+    this.carFollow.z = this.car.pos.y;
+    this.carFollow.heading = this.car.heading;
+    this.chaseCam = new ChaseCamera(this.camera, this.carFollow);
 
     this.input.attach();
     window.addEventListener('keydown', this.onKeyDown);
@@ -135,44 +164,65 @@ export class Game {
     this.controls?.sync();
     this.input.sample();
 
-    this.car.update(dt, this.input);
-    this.resolveCollisions();
+    const driving = this.intervention.mode === 'driving';
+
+    if (driving) {
+      this.car.update(dt, this.input);
+      this.resolveCollisions();
+    } else {
+      this.car.update(dt, this.idleInput);
+      this.intervention.update(dt, this.car);
+    }
 
     this.minutes = (this.minutes + dt * CONFIG.shift.minutesPerSecond) % 1440;
     this.traffic.update(dt, this.car.pos.x, this.car.pos.y);
 
-    this.chaseCam.update(dt);
+    const follow = driving ? this.carFollow : this.officer;
+    this.chaseCam.update(dt, follow, driving ? DRIVING_RIG : FOOT_RIG);
     this.sky.update(this.car.group.position, this.minutes);
     this.lamps.update(1 - this.sky.brightness);
 
-    this.dispatch.update(dt, this.car, this.minutes, (xp) => {
-      this.xp += xp;
-      this.hud.setXP(this.xp);
-    });
-    this.updateGpsTarget();
+    this.dispatch.update(dt, this.car, this.minutes);
+
+    if (driving) {
+      const target = this.dispatch.target;
+      if (target && target.onSite) {
+        this.hud.showExit(() => this.intervention.start(this.car, target));
+      } else {
+        this.hud.showExit(null);
+      }
+    } else {
+      this.hud.showExit(null);
+    }
+
+    this.carFollow.x = this.car.pos.x;
+    this.carFollow.z = this.car.pos.y;
+    this.carFollow.heading = this.car.heading;
+
+    this.updateGpsTarget(driving ? this.carFollow : this.officer);
 
     this.hud.update(this.minutes, this.car.speed, this.car.speed < -0.2);
 
     this.renderer.render(this.scene, this.camera);
   };
 
-  private updateGpsTarget(): void {
-    const target = this.dispatch.target;
+  private updateGpsTarget(anchor: FollowTarget): void {
+    const target = this.intervention.activeCall ?? this.dispatch.target;
     if (!target) {
-      this.hud.setTarget(null, 0, false, 0);
+      this.hud.setTarget(null, 0, false);
       return;
     }
 
-    const dx = target.x - this.car.pos.x;
-    const dz = target.z - this.car.pos.y;
+    const dx = target.x - anchor.x;
+    const dz = target.z - anchor.z;
     const dist = Math.hypot(dx, dz);
     const worldAngle = Math.atan2(dx, dz);
-    let rel = worldAngle - this.car.heading;
+    let rel = worldAngle - anchor.heading;
     if (rel > Math.PI) rel -= Math.PI * 2;
     if (rel < -Math.PI) rel += Math.PI * 2;
 
-    const onsite = dist < 14 && Math.abs(this.car.speed) < 2.5;
-    this.hud.setTarget(rel, dist, onsite, this.dispatch.targetOnsiteProgress(target));
+    const onsite = this.intervention.activeCall !== null || (dist < 14 && Math.abs(this.car.speed) < 2.5);
+    this.hud.setTarget(rel, dist, onsite);
   }
 
   private resolveCollisions(): void {
@@ -240,6 +290,7 @@ export class Game {
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.input.detach();
     this.siren.dispose();
+    this.intervention.dispose();
     this.dispatch.dispose();
     this.renderer.dispose();
     this.container.removeChild(this.renderer.domElement);
