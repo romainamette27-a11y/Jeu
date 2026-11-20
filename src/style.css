@@ -290,6 +290,90 @@ body {
   border-radius: 14px;
 }
 
+/* ---------- Radio ---------- */
+#radio {
+  position: fixed;
+  top: calc(58px + var(--safe-t));
+  left: calc(12px + var(--safe-l));
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: min(66vw, 420px);
+  pointer-events: none;
+}
+.radio-msg {
+  display: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(8, 12, 20, 0.7);
+  border: 1px solid rgba(90, 140, 255, 0.35);
+  border-left: 3px solid var(--accent);
+  color: var(--hud-text);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.radio-msg.shown {
+  display: block;
+  animation: radioIn 0.3s ease;
+}
+@keyframes radioIn {
+  from {
+    transform: translateX(-12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.radio-head {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #9fc0ff;
+  font-weight: 700;
+}
+.radio-body {
+  font-size: 12.5px;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+/* ---------- GPS ---------- */
+#gps {
+  position: fixed;
+  top: calc(10px + var(--safe-t));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--hud-bg);
+  border: 1px solid rgba(255, 200, 70, 0.4);
+  color: #ffd88a;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#gps.hidden {
+  display: none;
+}
+#gps-arrow {
+  display: inline-block;
+  font-size: 16px;
+  transition: transform 0.15s linear;
+}
+#gps.onsite {
+  border-color: rgba(110, 235, 120, 0.6);
+  color: #9fffae;
+}
+
 /* ---------- Hint toast ---------- */
 #hint {
   position: fixed;

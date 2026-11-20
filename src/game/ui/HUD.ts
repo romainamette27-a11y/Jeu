@@ -1,14 +1,17 @@
-import { CONFIG } from '../config';
-
 export class HUD {
   private shiftValue: HTMLElement;
   private speedValue: HTMLElement;
   private gearValue: HTMLElement;
+  private xpValue: HTMLElement;
+  private callsValue: HTMLElement;
+  private radioPanel: HTMLElement;
+  private gps: HTMLElement;
+  private gpsArrow: HTMLElement;
+  private gpsDist: HTMLElement;
   private hint: HTMLElement;
   private sirenBtn: HTMLButtonElement;
   private sirenHandler: ((on: boolean) => void) | null = null;
   private hintTimer: number | null = null;
-  private minutes = CONFIG.shift.startMinutes;
 
   constructor() {
     const hud = document.createElement('div');
@@ -22,7 +25,15 @@ export class HUD {
     shift.className = 'hud-chip';
     shift.innerHTML = `<span class="label">SHIFT</span><span class="value">08:00</span>`;
 
-    topLeft.appendChild(shift);
+    const xpChip = document.createElement('div');
+    xpChip.className = 'hud-chip';
+    xpChip.innerHTML = `<span class="label">XP</span><span class="value" id="hud-xp">0</span>`;
+
+    const callsChip = document.createElement('div');
+    callsChip.className = 'hud-chip';
+    callsChip.innerHTML = `<span class="label">APPELS</span><span class="value" id="hud-calls">0</span>`;
+
+    topLeft.append(shift, xpChip, callsChip);
 
     const topRight = document.createElement('div');
     topRight.className = 'hud-top-right';
@@ -57,16 +68,33 @@ export class HUD {
       <div id="hud-gear">D</div>
     `;
 
-    hud.append(topLeft, topRight, speed);
+    this.gps = document.createElement('div');
+    this.gps.id = 'gps';
+    this.gpsArrow = document.createElement('span');
+    this.gpsArrow.id = 'gps-arrow';
+    this.gpsArrow.textContent = '▲';
+    this.gpsDist = document.createElement('span');
+    this.gpsDist.id = 'gps-dist';
+
+    this.gps.append(this.gpsArrow, this.gpsDist);
+
+    this.radioPanel = document.createElement('div');
+    this.radioPanel.id = 'radio';
 
     this.hint = document.createElement('div');
     this.hint.id = 'hint';
 
-    document.body.append(hud, this.hint);
+    hud.append(topLeft, topRight, this.gps, speed);
+
+    document.body.append(hud, this.radioPanel, this.hint);
 
     this.shiftValue = shift.querySelector('.value')!;
     this.speedValue = speed.querySelector('.speed-value')!;
     this.gearValue = speed.querySelector('#hud-gear')!;
+    this.xpValue = xpChip.querySelector('#hud-xp')!;
+    this.callsValue = callsChip.querySelector('#hud-calls')!;
+    this.gpsDist = this.gps.querySelector('#gps-dist')!;
+    this.gps.classList.add('hidden');
   }
 
   setSirenHandler(handler: (on: boolean) => void): void {
@@ -77,13 +105,52 @@ export class HUD {
     this.sirenBtn.classList.toggle('pressed', on);
   }
 
-  update(dt: number, speedMs: number, reverse: boolean): void {
-    this.minutes = (this.minutes + dt * CONFIG.shift.minutesPerSecond) % (24 * 60);
-    const h = Math.floor(this.minutes / 60);
-    const m = Math.floor(this.minutes % 60);
+  update(minutes: number, speedMs: number, reverse: boolean): void {
+    const h = Math.floor(minutes / 60) % 24;
+    const m = Math.floor(minutes % 60);
     this.shiftValue.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     this.speedValue.textContent = String(Math.round(Math.abs(speedMs) * 3.6));
     this.gearValue.textContent = reverse ? 'R' : 'D';
+  }
+
+  setXP(xp: number): void {
+    this.xpValue.textContent = String(xp);
+  }
+
+  setCalls(count: number): void {
+    this.callsValue.textContent = String(count);
+  }
+
+  setTarget(relAngle: number | null, distance: number, onsite: boolean, onsiteProgress: number): void {
+    if (relAngle === null) {
+      this.gps.classList.add('hidden');
+      return;
+    }
+    this.gps.classList.remove('hidden');
+    this.gpsArrow.style.transform = `rotate(${-relAngle * (180 / Math.PI)}deg)`;
+    this.gpsDist.textContent = onsite
+      ? `SUR PLACE — ${Math.min(100, Math.round(onsiteProgress * 100))} %`
+      : `${Math.round(distance / 5) * 5} m`;
+  }
+
+  radioPush(from: string, text: string): void {
+    const msg = document.createElement('div');
+    msg.className = 'radio-msg';
+
+    const head = document.createElement('div');
+    head.className = 'radio-head';
+    head.textContent = `📻 ${from}`;
+    const body = document.createElement('div');
+    body.className = 'radio-body';
+    body.textContent = text;
+
+    msg.append(head, body);
+    this.radioPanel.prepend(msg);
+
+    while (this.radioPanel.children.length > 3) {
+      this.radioPanel.removeChild(this.radioPanel.lastChild!);
+    }
+    window.setTimeout(() => msg.classList.add('shown'), 30);
   }
 
   showHint(text: string, durationMs = 6000): void {
