@@ -202,10 +202,12 @@ export class HUD {
     this.logEl.innerHTML = '';
     this.intActions.innerHTML = '';
     this.intPanel.classList.remove('hidden');
+    document.body.classList.add('int-open');
   }
 
   closeIntervention(): void {
     this.intPanel.classList.add('hidden');
+    document.body.classList.remove('int-open');
     this.intActions.innerHTML = '';
   }
 

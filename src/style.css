@@ -217,6 +217,10 @@ body {
 #controls.active {
   display: block;
 }
+body.int-open #controls,
+body.int-open #controls.active {
+  display: none;
+}
 #steer-track {
   position: absolute;
   left: calc(16px + var(--safe-l));
