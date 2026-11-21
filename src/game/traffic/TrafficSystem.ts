@@ -60,6 +60,7 @@ export class TrafficSystem {
   private readonly n = CONFIG.city.blocksPerSide;
   private wheels: THREE.InstancedMesh;
   private wheelDummy = new THREE.Object3D();
+  private wheelCount = 0;
   private speeder: TrafficCar | null = null;
   private speederState: 'chase' | 'pulling' = 'chase';
   private speederTimer = 0;
@@ -381,5 +382,14 @@ export class TrafficSystem {
       }
     }
     this.wheels.instanceMatrix.needsUpdate = true;
+
+    if (this.cars.length < this.wheelCount) {
+      const gone = new THREE.Matrix4().makeScale(0, 0, 0);
+      for (let i = this.cars.length * 4; i < this.wheelCount * 4; i++) {
+        this.wheels.setMatrixAt(i, gone);
+      }
+      this.wheels.instanceMatrix.needsUpdate = true;
+    }
+    this.wheelCount = this.cars.length;
   }
 }

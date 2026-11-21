@@ -39,6 +39,7 @@ export interface Call {
 export class Dispatch {
   private group = new THREE.Group();
   private calls: Call[] = [];
+  private pendingOffer: { call: Call; expires: number } | null = null;
   private nextIn = 18;
   private totalCalls = 0;
 
@@ -66,12 +67,47 @@ export class Dispatch {
   private lastPlayerX = 0;
   private lastPlayerZ = 0;
 
+  acceptOffer(): void {
+    if (!this.pendingOffer) return;
+    const call = this.pendingOffer.call;
+    call.beacon.visible = true;
+    this.calls.push(call);
+    this.totalCalls++;
+    this.pendingOffer = null;
+    this.hud.hideCallOffer();
+    this.hud.setCalls(this.calls.length);
+    this.hud.radioPush('Centrale DCT', 'Appel accepté. Rendez-vous sur les lieux, officier.');
+    this.nextIn = 40 + Math.random() * 30;
+  }
+
+  declineOffer(): void {
+    if (!this.pendingOffer) return;
+    this.group.remove(this.pendingOffer.call.beacon);
+    this.pendingOffer = null;
+    this.hud.hideCallOffer();
+    this.nextIn = 25 + Math.random() * 20;
+    this.hud.radioPush('Centrale DCT', 'Appel refusé — réaffecté à une autre patrouille.');
+    this.hud.setCalls(this.calls.length);
+  }
+
   update(dt: number, car: PoliceCar, minutes: number): void {
     this.lastPlayerX = car.pos.x;
     this.lastPlayerZ = car.pos.y;
 
+    if (this.pendingOffer) {
+      this.pendingOffer.expires -= dt;
+      this.hud.setCallOfferTimer(Math.max(0, Math.ceil(this.pendingOffer.expires)));
+      if (this.pendingOffer.expires <= 0) {
+        this.group.remove(this.pendingOffer.call.beacon);
+        this.pendingOffer = null;
+        this.hud.hideCallOffer();
+        this.hud.radioPush('Centrale DCT', 'Pas de réponse à l’appel — remis en file d’attente.');
+        this.nextIn = 10 + Math.random() * 10;
+      }
+    }
+
     this.nextIn -= dt;
-    if (this.nextIn <= 0 && this.calls.length < 1) {
+    if (this.nextIn <= 0 && this.calls.length < 1 && !this.pendingOffer) {
       this.spawnCall(minutes);
       this.nextIn = 40 + Math.random() * 30;
     }
@@ -159,16 +195,22 @@ export class Dispatch {
     ring.position.y = 0.15;
     beacon.add(column, ring);
     beacon.position.set(pos.x, 0, pos.z);
+    beacon.visible = false;
     this.group.add(beacon);
 
-    this.calls.push({ type, x: pos.x, z: pos.z, onSite: false, beacon, ring });
-    this.totalCalls++;
+    this.pendingOffer = { call: { type, x: pos.x, z: pos.z, onSite: false, beacon, ring }, expires: 15 };
 
     const h = Math.floor(minutes / 60);
     const m = Math.floor(minutes % 60);
     const stamp = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     this.hud.radioPush(`${stamp} — ${type.caller}`, `${type.label} : ${type.detail}`);
-    this.hud.setCalls(this.calls.length);
+    this.hud.showCallOffer(
+      type.caller,
+      type.label,
+      type.detail,
+      () => this.acceptOffer(),
+      () => this.declineOffer()
+    );
     this.sfx.dispatch();
   }
 
@@ -201,6 +243,11 @@ export class Dispatch {
       });
     }
     this.calls = [];
+    if (this.pendingOffer) {
+      this.group.remove(this.pendingOffer.call.beacon);
+      this.pendingOffer = null;
+    }
+    this.hud.hideCallOffer();
     this.hud.setCalls(0);
   }
 

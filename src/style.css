@@ -683,3 +683,80 @@ body.int-open #controls.active {
   opacity: 0.35;
   pointer-events: none;
 }
+
+/* ---------- Appel entrant ---------- */
+#call-offer {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(64px + env(safe-area-inset-top, 0px));
+  z-index: 24;
+  width: min(88vw, 360px);
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 200, 90, 0.5);
+  background: rgba(10, 16, 28, 0.88);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: offer-in 0.25s ease-out;
+}
+#call-offer.hidden {
+  display: none;
+}
+@keyframes offer-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+.offer-head {
+  font-weight: 800;
+  font-size: 14px;
+  color: #ffe6b0;
+  letter-spacing: 0.03em;
+}
+.offer-detail {
+  font-size: 12.5px;
+  color: var(--hud-text);
+  line-height: 1.35;
+}
+.offer-timer {
+  font-size: 11px;
+  color: #9aa7bd;
+}
+.offer-btns {
+  display: flex;
+  gap: 10px;
+}
+.offer-accept,
+.offer-decline {
+  flex: 1;
+  padding: 11px 8px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+.offer-accept {
+  border: 1px solid rgba(110, 235, 120, 0.6);
+  background: rgba(10, 24, 18, 0.85);
+  color: #9fffae;
+}
+.offer-decline {
+  border: 1px solid rgba(255, 110, 100, 0.5);
+  background: rgba(28, 10, 10, 0.85);
+  color: #ffa89e;
+}
+.offer-accept:active {
+  background: rgba(20, 40, 28, 0.95);
+}
+.offer-decline:active {
+  background: rgba(40, 18, 16, 0.95);
+}

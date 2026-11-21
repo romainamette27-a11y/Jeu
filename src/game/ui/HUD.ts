@@ -26,6 +26,12 @@ export class HUD {
   private wheelCenter: HTMLElement;
   private wheelBar: HTMLElement;
   private wheelLabel: HTMLElement;
+  private offer: HTMLElement;
+  private offerHead: HTMLElement;
+  private offerDetail: HTMLElement;
+  private offerTimer: HTMLElement;
+  private offerAccept: (() => void) | null = null;
+  private offerDecline: (() => void) | null = null;
 
   constructor() {
     const hud = document.createElement('div');
@@ -137,9 +143,39 @@ export class HUD {
     this.wheelCenter.append(this.wheelLabel, this.wheelBar);
     this.wheel.append(this.wheelCenter);
 
+    this.offer = document.createElement('div');
+    this.offer.id = 'call-offer';
+    this.offer.classList.add('hidden');
+    this.offerHead = document.createElement('div');
+    this.offerHead.className = 'offer-head';
+    this.offerDetail = document.createElement('div');
+    this.offerDetail.className = 'offer-detail';
+    this.offerTimer = document.createElement('div');
+    this.offerTimer.className = 'offer-timer';
+    const offerBtns = document.createElement('div');
+    offerBtns.className = 'offer-btns';
+    const acceptBtn = document.createElement('button');
+    acceptBtn.type = 'button';
+    acceptBtn.className = 'offer-accept';
+    acceptBtn.textContent = '✅ ACCEPTER';
+    acceptBtn.addEventListener('click', () => {
+      this.hideCallOffer();
+      this.offerAccept?.();
+    });
+    const declineBtn = document.createElement('button');
+    declineBtn.type = 'button';
+    declineBtn.className = 'offer-decline';
+    declineBtn.textContent = '❌ REFUSER';
+    declineBtn.addEventListener('click', () => {
+      this.hideCallOffer();
+      this.offerDecline?.();
+    });
+    offerBtns.append(acceptBtn, declineBtn);
+    this.offer.append(this.offerHead, this.offerDetail, this.offerTimer, offerBtns);
+
     hud.append(topLeft, topRight, this.gps, speed);
 
-    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel, this.wheel, this.bilan);
+    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel, this.wheel, this.offer, this.bilan);
 
     this.rankValue = rankChip.querySelector('#hud-rank')!;
     this.bilanLines = document.createElement('div');
@@ -186,6 +222,32 @@ export class HUD {
     this.gps.classList.remove('hidden');
     this.gpsArrow.style.transform = `rotate(${-relAngle * (180 / Math.PI)}deg)`;
     this.gpsDist.textContent = onsite ? 'SUR PLACE' : `${Math.round(distance / 5) * 5} m`;
+  }
+
+  showCallOffer(
+    caller: string,
+    label: string,
+    detail: string,
+    onAccept: () => void,
+    onDecline: () => void
+  ): void {
+    this.offerHead.textContent = `📻 Appel entrant — ${caller}`;
+    this.offerDetail.textContent = `${label} : ${detail}`;
+    this.offerTimer.textContent = '';
+    this.offerAccept = onAccept;
+    this.offerDecline = onDecline;
+    this.offer.classList.remove('hidden');
+  }
+
+  setCallOfferTimer(seconds: number): void {
+    if (this.offer.classList.contains('hidden')) return;
+    this.offerTimer.textContent = `Réponse attendue dans ${seconds} s`;
+  }
+
+  hideCallOffer(): void {
+    this.offer.classList.add('hidden');
+    this.offerAccept = null;
+    this.offerDecline = null;
   }
 
   radioPush(from: string, text: string): void {

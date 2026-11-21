@@ -57,6 +57,10 @@ npm run preview    # prévisualise le build
 - [x] **Lot C — Patrouille à pied & interceptions** : sortie du véhicule libre avec commandes de marche,
       remontée près du véhicule, excès de vitesse dynamiques (marqueur jaune, poursuite, interception
       générant un contrôle routier sur place)
+- [x] **Appels radio accepter/refuser** : carte d'appel entrant avec compte a rebours 15 s,
+      acceptation (balise GPS) ou refus (reaffecte), expiration automatique sans reponse
+- [x] **Fix roues fantomes** : les roues des vehicules interceptes disparissaient mal apres
+      leur retrait de la circulation (instances masquees proprement desormais)
 - [x] **Vie urbaine densifiee** : ~420 pietons et ~280 vehicules en circulation (culling par
       distance pour le framerate), 84 voitures stationnees le long des trottoirs avec parcometres
       (ecran vert = paye, rouge = expirie), roues de police realignees dans l'axe de la caisse
