@@ -1,5 +1,10 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { CONFIG } from './config';
+import { makeEnvTexture } from './world/EnvSky';
 import { City } from './world/City';
 import { StreetLamps } from './world/StreetLamps';
 import { SkyAndLights } from './world/SkyAndLights';
@@ -25,6 +30,7 @@ const tmpVec = new THREE.Vector3();
 
 export class Game {
   private renderer: THREE.WebGLRenderer;
+  private composer: EffectComposer;
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
   private clock = new THREE.Clock();
@@ -62,6 +68,7 @@ export class Game {
   private shiftWarnings = 0;
   private shiftDistance = 0;
   private rankName = 'Cadet';
+  private meterActionShown = false;
 
   constructor(private container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -75,6 +82,18 @@ export class Game {
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 1.0, 1200);
+
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromEquirectangular(makeEnvTexture()).texture;
+    this.scene.environmentIntensity = 0.55;
+    pmrem.dispose();
+
+    const composer = new EffectComposer(this.renderer);
+    composer.addPass(new RenderPass(this.scene, this.camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.28, 0.55, 1.0));
+    composer.addPass(new OutputPass());
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.composer = composer;
 
     this.city = new City();
     this.scene.add(this.city.group);
@@ -224,6 +243,7 @@ export class Game {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.composer.setSize(window.innerWidth, window.innerHeight);
   };
 
   private onVisibility = () => {
@@ -254,7 +274,7 @@ export class Game {
       this.city.setNight(1 - this.sky.brightness);
       this.chaseCam.update(dt, this.carFollow, DRIVING_RIG);
       this.hud.update(this.minutes, 0, false);
-      this.renderer.render(this.scene, this.camera);
+      this.composer.render();
       return;
     }
 
@@ -308,6 +328,25 @@ export class Game {
       } else {
         this.hud.showExit(null);
       }
+
+      const meter = this.parked.expiredMeterNear(this.officer.x, this.officer.z, 4.5);
+      const hasMeterAction = meter !== null;
+      if (hasMeterAction !== this.meterActionShown) {
+        this.meterActionShown = hasMeterAction;
+        this.hud.setIntActions(
+          hasMeterAction ? [{ key: 'meter', label: '🎫 Verbaliser l’horodateur (+25 XP)' }] : [],
+          (key) => {
+            if (key !== 'meter') return;
+            const m = this.parked.expiredMeterNear(this.officer.x, this.officer.z, 4.5);
+            if (!m) return;
+            this.parked.ticket(m);
+            this.shiftPv++;
+            this.addXp(25);
+            this.hud.showHint('🎫 PV stationnement dressé — horodateur en infraction.', 5000);
+            this.hud.radioPush('Centrale DCT', 'PV de stationnement émis. Bien joué, officier.');
+          }
+        );
+      }
     } else {
       this.hud.showExit(null);
     }
@@ -325,7 +364,7 @@ export class Game {
       this.endShift();
     }
 
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   };
 
   private updateGpsTarget(anchor: FollowTarget): void {

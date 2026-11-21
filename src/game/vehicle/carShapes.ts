@@ -76,8 +76,8 @@ export function carCabinGeometry(kind: CarKind): THREE.BufferGeometry {
 export function makeCarBody(kind: CarKind, color: number): THREE.Group {
   const group = new THREE.Group();
 
-  const paint = new THREE.MeshStandardMaterial({ color, roughness: 0.42, metalness: 0.35 });
-  const glass = new THREE.MeshStandardMaterial({ color: 0x22313f, roughness: 0.15, metalness: 0.55 });
+  const paint = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.4, envMapIntensity: 1.1 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x1c2833, roughness: 0.08, metalness: 0.65, envMapIntensity: 1.2 });
   const trim = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.85 });
   const headlights = new THREE.MeshStandardMaterial({
     color: 0xd8d3bd,

@@ -57,6 +57,12 @@ npm run preview    # prévisualise le build
 - [x] **Lot C — Patrouille à pied & interceptions** : sortie du véhicule libre avec commandes de marche,
       remontée près du véhicule, excès de vitesse dynamiques (marqueur jaune, poursuite, interception
       générant un contrôle routier sur place)
+- [x] **Rendu avance** : environment map PBR (reflets ciel/ville sur carrosseries), bloom sur
+      gyrophares/phares/lampadaires la nuit, ombres douces (2048px desktop), ACES deja actif
+- [x] **Controle des horodateurs** : en patrouille a pied, verbaliser un parcometre expire
+      (ecran rouge) a proximite (+25 XP, PV compte au bilan) ; l'ecran passe au vert une fois
+      traite
+- [x] **Bouton action** : suppression de la pulsation verte permanente
 - [x] **Appels radio accepter/refuser** : carte d'appel entrant avec compte a rebours 15 s,
       acceptation (balise GPS) ou refus (reaffecte), expiration automatique sans reponse
 - [x] **Fix roues fantomes** : les roues des vehicules interceptes disparissaient mal apres

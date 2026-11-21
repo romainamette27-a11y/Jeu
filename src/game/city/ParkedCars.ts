@@ -4,9 +4,36 @@ import { makeCarBody } from '../vehicle/carShapes';
 
 const CAR_COLORS = [0xbfc3c9, 0x5c6470, 0x1d2b4a, 0x742c34, 0x54626e, 0xd8d3bd, 0x2d2f36, 0x9c5c50, 0x35507a];
 
+interface Meter {
+  x: number;
+  z: number;
+  paid: boolean;
+  screen: THREE.MeshBasicMaterial;
+}
+
 export class ParkedCars {
   readonly group = new THREE.Group();
   private items: { g: THREE.Object3D; x: number; z: number }[] = [];
+  private meters: Meter[] = [];
+
+  expiredMeterNear(px: number, pz: number, radius: number): Meter | null {
+    let best: Meter | null = null;
+    let bestDist = radius;
+    for (const m of this.meters) {
+      if (m.paid) continue;
+      const d = Math.hypot(m.x - px, m.z - pz);
+      if (d < bestDist) {
+        bestDist = d;
+        best = m;
+      }
+    }
+    return best;
+  }
+
+  ticket(meter: Meter): void {
+    meter.paid = true;
+    meter.screen.color.setHex(0x57d97a);
+  }
 
   update(px: number, pz: number): void {
     for (const it of this.items) {
@@ -59,12 +86,13 @@ export class ParkedCars {
         const paid = Math.random() < 0.6;
         const mx = vertical ? lineC + side * 9.0 : along + (Math.random() - 0.5) * 4;
         const mz = vertical ? along + (Math.random() - 0.5) * 4 : lineC + side * 9.0;
-        this.group.add(this.makeMeter(mx, mz, paid));
+        const rotY = vertical ? (side > 0 ? -Math.PI / 2 : Math.PI / 2) : side > 0 ? Math.PI : 0;
+        this.meters.push(this.makeMeter(mx, mz, paid, rotY));
       }
     }
   }
 
-  private makeMeter(x: number, z: number, paid: boolean): THREE.Group {
+  private makeMeter(x: number, z: number, paid: boolean, rotY: number): Meter {
     const group = new THREE.Group();
     const metal = new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.6, metalness: 0.5 });
 
@@ -73,15 +101,14 @@ export class ParkedCars {
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.34, 0.14), metal);
     head.position.y = 1.08;
     const screenColor = paid ? 0x35d16f : 0xe8452c;
-    const screen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.13, 0.2),
-      new THREE.MeshBasicMaterial({ color: screenColor })
-    );
-    screen.position.set(0, 1.1, 0.075);
+    const screen = new THREE.MeshBasicMaterial({ color: screenColor });
+    const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.2), screen);
+    screenMesh.position.set(0, 1.1, 0.075);
 
-    group.add(post, head, screen);
+    group.add(post, head, screenMesh);
     group.position.set(x, 0, z);
+    group.rotation.y = rotY;
     this.items.push({ g: group, x, z });
-    return group;
+    return { x, z, paid, screen };
   }
 }

@@ -23,7 +23,9 @@ export class SkyAndLights {
 
     const sun = new THREE.DirectionalLight(0xffe9c4, 2.2);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    sun.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048);
+    sun.shadow.radius = 3;
     sun.shadow.camera.near = 10;
     sun.shadow.camera.far = 320;
     const e = CONFIG.lights.shadowExtent;
