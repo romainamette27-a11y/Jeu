@@ -44,7 +44,7 @@ npm run preview    # prévisualise le build
       cycle jour/nuit (soleil, nuit bleutée, 98 lampadaires avec halos), XP d'intervention
 - [x] **Phase 3 — Interventions variées** : contrôle routier, excès de vitesse, accidents,
       vols, arrestations — menus d'action (verbaliser, fouiller, menotter, renforts)
-- [ ] **Phase 4 — Progression réalistique** : fin de shift + bilan, XP, grades,
+- [x] **Phase 4 — Progression réalistique** : fin de shift + bilan, XP, grades,
       déblocages, sauvegarde locale
 - [ ] **Phase 5 — Polish** : éclairage nocturne (lampadaires, feux), sons (sirène, radio,
       moteur), optimisation mobile avancée

@@ -31,6 +31,7 @@ export const CONFIG = {
   },
   shift: {
     startMinutes: 8 * 60,
+    endMinutes: 16 * 60,
     minutesPerSecond: 2.0
   },
   lights: {

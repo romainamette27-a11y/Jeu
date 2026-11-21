@@ -149,6 +149,20 @@ export class Dispatch {
     return null;
   }
 
+  clearCalls(): void {
+    for (const call of this.calls) {
+      this.group.remove(call.beacon);
+      call.beacon.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          (obj.material as THREE.Material).dispose();
+        }
+      });
+    }
+    this.calls = [];
+    this.hud.setCalls(0);
+  }
+
   finishCall(call: Call): void {
     const index = this.calls.indexOf(call);
     if (index === -1) return;

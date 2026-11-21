@@ -10,6 +10,8 @@ import { Dispatch } from './dispatch/Dispatch';
 import { ChaseCamera, FollowTarget, DRIVING_RIG, FOOT_RIG } from './camera/ChaseCamera';
 import { Officer } from './officer/Officer';
 import { InterventionSystem } from './dispatch/InterventionSystem';
+import type { CallTally } from './dispatch/InterventionSystem';
+import { loadSave, writeSave, rankFor, type SaveData } from './progression/Progression';
 import { InputManager } from './input/InputManager';
 import { VirtualControls } from './input/VirtualControls';
 import { Siren } from './audio/Siren';
@@ -45,6 +47,15 @@ export class Game {
   private running = true;
   private minutes = CONFIG.shift.startMinutes;
   private xp = 0;
+  private save: SaveData;
+  private offShift = false;
+  private shiftXp = 0;
+  private shiftCalls = 0;
+  private shiftArrests = 0;
+  private shiftPv = 0;
+  private shiftWarnings = 0;
+  private shiftDistance = 0;
+  private rankName = 'Cadet';
 
   constructor(private container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -76,19 +87,25 @@ export class Game {
     this.hud = new HUD();
     this.dispatch = new Dispatch(this.scene, this.hud, this.sfx);
 
+    this.save = loadSave();
+    this.xp = this.save.totalXp;
+    this.rankName = rankFor(this.xp).name;
+    this.hud.setXP(this.xp);
+    this.hud.setRank(this.rankName);
+
     this.intervention = new InterventionSystem(
       this.scene,
       this.hud,
       this.officer,
-      (call) => {
-        this.xp += call.type.xp;
-        this.hud.setXP(this.xp);
+      (call, tally: CallTally) => {
+        this.shiftCalls++;
+        this.shiftArrests += tally.arrests;
+        this.shiftPv += tally.pv;
+        this.shiftWarnings += tally.warnings;
+        this.addXp(call.type.xp);
         this.dispatch.finishCall(call);
       },
-      (xp) => {
-        this.xp += xp;
-        this.hud.setXP(this.xp);
-      }
+      (xp) => this.addXp(xp)
     );
 
     this.carFollow.x = this.car.pos.x;
@@ -120,6 +137,22 @@ export class Game {
 
   private isTouchDevice(): boolean {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  }
+
+  private addXp(xp: number): void {
+    this.xp += xp;
+    this.shiftXp += xp;
+    this.hud.setXP(this.xp);
+
+    const rank = rankFor(this.xp).name;
+    if (rank !== this.rankName) {
+      this.rankName = rank;
+      this.hud.setRank(rank);
+      this.hud.showHint('🎖️ Promotion ! Nouveau grade : ' + rank, 7000);
+    }
+
+    this.save.totalXp = this.xp;
+    writeSave(this.save);
   }
 
   private onFirstGesture = () => {
@@ -164,11 +197,21 @@ export class Game {
     this.controls?.sync();
     this.input.sample();
 
+    if (this.offShift) {
+      this.sky.update(this.car.group.position, this.minutes);
+      this.lamps.update(1 - this.sky.brightness);
+      this.chaseCam.update(dt, this.carFollow, DRIVING_RIG);
+      this.hud.update(this.minutes, 0, false);
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
+
     const driving = this.intervention.mode === 'driving';
 
     if (driving) {
       this.car.update(dt, this.input);
       this.resolveCollisions();
+      this.shiftDistance += Math.abs(this.car.speed) * dt;
     } else {
       this.car.update(dt, this.idleInput);
       this.intervention.update(dt, this.car);
@@ -202,6 +245,10 @@ export class Game {
     this.updateGpsTarget(driving ? this.carFollow : this.officer);
 
     this.hud.update(this.minutes, this.car.speed, this.car.speed < -0.2);
+
+    if (this.minutes >= CONFIG.shift.endMinutes) {
+      this.endShift();
+    }
 
     this.renderer.render(this.scene, this.camera);
   };
@@ -294,5 +341,69 @@ export class Game {
     this.dispatch.dispose();
     this.renderer.dispose();
     this.container.removeChild(this.renderer.domElement);
+  }
+
+  private endShift(): void {
+    this.offShift = true;
+    this.applySiren(false);
+    this.intervention.abort();
+    this.dispatch.clearCalls();
+
+    this.save.totalXp = this.xp;
+    this.save.shifts++;
+    this.save.calls += this.shiftCalls;
+    this.save.arrests += this.shiftArrests;
+    this.save.pv += this.shiftPv;
+    this.save.warnings += this.shiftWarnings;
+    this.save.distance += this.shiftDistance;
+    writeSave(this.save);
+
+    const rank = rankFor(this.xp);
+    const rankText = rank.nextXp
+      ? `${rank.name} — prochain grade à ${rank.nextXp} XP`
+      : `${rank.name} — grade maximum atteint`;
+
+    this.hud.showBilan(
+      '📋 Fin du service — Bilan',
+      [
+        ['Appels traités', String(this.shiftCalls)],
+        ['Interpellations', String(this.shiftArrests)],
+        ['PV dressés', String(this.shiftPv)],
+        ['Avertissements', String(this.shiftWarnings)],
+        ['XP du service', `+${this.shiftXp}`],
+        ['XP total', String(this.xp)],
+        ['Distance parcourue', `${(this.save.distance / 1000).toFixed(1)} km`]
+      ],
+      rankText,
+      () => this.resetShift()
+    );
+
+    this.sfx.complete();
+    this.hud.radioPush('Centrale DCT', 'Service terminé, officier. Rendez-vous au prochain shift !');
+  }
+
+  private resetShift(): void {
+    this.minutes = CONFIG.shift.startMinutes;
+    this.offShift = false;
+    this.shiftXp = 0;
+    this.shiftCalls = 0;
+    this.shiftArrests = 0;
+    this.shiftPv = 0;
+    this.shiftWarnings = 0;
+    this.shiftDistance = 0;
+
+    this.car.pos.set(0, -150);
+    this.car.heading = 0;
+    this.car.speed = 0;
+    this.car.group.position.set(this.car.pos.x, 0, this.car.pos.y);
+
+    this.carFollow.x = this.car.pos.x;
+    this.carFollow.z = this.car.pos.y;
+    this.carFollow.heading = this.car.heading;
+    this.chaseCam.snap(this.carFollow, DRIVING_RIG);
+
+    this.hud.showHint('Nouveau service ! Reste à l’écoute du poste...', 6000);
+    this.hud.radioPush('Centrale DCT', 'Nouveau service. La ville compte sur toi, officier.');
+    this.clock.getDelta();
   }
 }

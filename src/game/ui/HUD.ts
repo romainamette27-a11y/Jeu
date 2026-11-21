@@ -19,6 +19,9 @@ export class HUD {
   private logEl: HTMLElement;
   private intActions: HTMLElement;
   private actionHandler: ((key: string) => void) | null = null;
+  private rankValue: HTMLElement;
+  private bilan: HTMLElement;
+  private bilanLines: HTMLElement;
 
   constructor() {
     const hud = document.createElement('div');
@@ -32,6 +35,10 @@ export class HUD {
     shift.className = 'hud-chip';
     shift.innerHTML = `<span class="label">SHIFT</span><span class="value">08:00</span>`;
 
+    const rankChip = document.createElement('div');
+    rankChip.className = 'hud-chip';
+    rankChip.innerHTML = `<span class="label">GRADE</span><span class="value" id="hud-rank">Cadet</span>`;
+
     const xpChip = document.createElement('div');
     xpChip.className = 'hud-chip';
     xpChip.innerHTML = `<span class="label">XP</span><span class="value" id="hud-xp">0</span>`;
@@ -40,7 +47,7 @@ export class HUD {
     callsChip.className = 'hud-chip';
     callsChip.innerHTML = `<span class="label">APPELS</span><span class="value" id="hud-calls">0</span>`;
 
-    topLeft.append(shift, xpChip, callsChip);
+    topLeft.append(shift, xpChip, callsChip, rankChip);
 
     const topRight = document.createElement('div');
     topRight.className = 'hud-top-right';
@@ -109,9 +116,17 @@ export class HUD {
     this.intActions.className = 'int-actions';
     this.intPanel.append(this.intTitle, this.logEl, this.intActions);
 
+    this.bilan = document.createElement('div');
+    this.bilan.id = 'bilan';
+    this.bilan.classList.add('hidden');
+
     hud.append(topLeft, topRight, this.gps, speed);
 
-    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel);
+    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel, this.bilan);
+
+    this.rankValue = rankChip.querySelector('#hud-rank')!;
+    this.bilanLines = document.createElement('div');
+    this.bilanLines.className = 'bilan-lines';
 
     this.shiftValue = shift.querySelector('.value')!;
     this.speedValue = speed.querySelector('.speed-value')!;
@@ -233,5 +248,53 @@ export class HUD {
       btn.addEventListener('click', () => this.actionHandler?.(action.key));
       this.intActions.append(btn);
     }
+  }
+
+  setRank(name: string): void {
+    this.rankValue.textContent = name;
+  }
+
+  showBilan(titleText: string, lines: [string, string][], rankText: string, onRestart: () => void): void {
+    this.closeIntervention();
+    this.showExit(null);
+
+    this.bilanLines.innerHTML = '';
+    for (const [label, value] of lines) {
+      const row = document.createElement('div');
+      row.className = 'bilan-line';
+      const l = document.createElement('span');
+      l.textContent = label;
+      const v = document.createElement('span');
+      v.textContent = value;
+      row.append(l, v);
+      this.bilanLines.append(row);
+    }
+
+    const rankBanner = document.createElement('div');
+    rankBanner.className = 'bilan-rank';
+    rankBanner.textContent = rankText;
+
+    this.bilan.innerHTML = '';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'bilan-title';
+    titleEl.textContent = titleText;
+
+    this.bilan.append(titleEl, rankBanner, this.bilanLines);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bilan-btn';
+    btn.textContent = '🚨 Nouveau service';
+    btn.addEventListener('click', () => {
+      this.hideBilan();
+      onRestart();
+    });
+    this.bilan.append(btn);
+
+    this.bilan.classList.remove('hidden');
+  }
+
+  hideBilan(): void {
+    this.bilan.classList.add('hidden');
   }
 }

@@ -7,6 +7,12 @@ import type { InterventionAction } from './InterventionAction';
 
 export type InterventionMode = 'driving' | 'toScene' | 'menu' | 'chase' | 'return';
 
+export interface CallTally {
+  arrests: number;
+  pv: number;
+  warnings: number;
+}
+
 interface Npc {
   group: THREE.Group;
   suspect: boolean;
@@ -39,6 +45,7 @@ interface ActiveIntervention {
   npcs: Npc[];
   s: IntState;
   used: Set<string>;
+  tally: CallTally;
 }
 
 export class InterventionSystem {
@@ -53,7 +60,7 @@ export class InterventionSystem {
     private scene: THREE.Scene,
     private hud: HUD,
     private officer: Officer,
-    private onFinish: (call: Call) => void,
+    private onFinish: (call: Call, tally: CallTally) => void,
     private onXp: (xp: number) => void
   ) {
     scene.add(this.npcRoot);
@@ -126,7 +133,7 @@ export class InterventionSystem {
     this.officer.group.visible = true;
     this.officer.walkTo(sx, sz + 4, 2.4);
 
-    this.current = { call, npcs, s: freshState(), used: new Set() };
+    this.current = { call, npcs, s: freshState(), used: new Set(), tally: { arrests: 0, pv: 0, warnings: 0 } };
     this.mode = 'toScene';
 
     this.hud.showExit(null);
@@ -134,13 +141,13 @@ export class InterventionSystem {
     this.hud.intLog('Tu arrives sur les lieux. Reste procédural et courtois.', 'info');
   }
 
-  private complete(call: Call): void {
+  private complete(call: Call, tally: CallTally): void {
     this.clearNpcs();
     this.current = null;
     this.finishedCall = null;
     this.returnToCarSignal = false;
     this.hud.closeIntervention();
-    this.onFinish(call);
+    this.onFinish(call, tally);
   }
 
   private returnToCar(car: PoliceCar): void {
@@ -388,6 +395,9 @@ export class InterventionSystem {
     }
 
     this.current.used.add(key);
+    if (key === 'arrest') this.current.tally.arrests++;
+    if (key === 'pv') this.current.tally.pv++;
+    if (key === 'warn') this.current.tally.warnings++;
     refresh();
   }
 
@@ -449,7 +459,7 @@ export class InterventionSystem {
           this.mode = 'driving';
           const call = this.finishedCall;
           if (call) {
-            this.complete(call);
+            this.complete(call, this.current.tally);
           } else {
             this.hud.closeIntervention();
           }
@@ -457,6 +467,16 @@ export class InterventionSystem {
         break;
       }
     }
+  }
+
+  abort(): void {
+    this.clearNpcs();
+    this.current = null;
+    this.finishedCall = null;
+    this.returnToCarSignal = false;
+    this.officer.group.visible = false;
+    this.hud.closeIntervention();
+    this.mode = 'driving';
   }
 
   dispose(): void {
