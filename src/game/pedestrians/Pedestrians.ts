@@ -238,6 +238,8 @@ export class Pedestrians {
       const dx = pos.x - px;
       const dz = pos.z - pz;
       const dist = Math.hypot(dx, dz);
+      ped.group.visible = dist < 140;
+      if (!ped.group.visible) continue;
       if (dist < 3.4 && dist > 0.1) {
         const push = (3.4 - dist) * 1.6 * dt;
         ped.dodgeX += (dx / dist) * push;

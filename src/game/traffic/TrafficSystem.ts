@@ -293,6 +293,7 @@ export class TrafficSystem {
       const check = (ox: number, oz: number, halfWidth: number, lookahead: number) => {
         const rx = ox - car.x;
         const rz = oz - car.z;
+        if (rx * rx + rz * rz > (lookahead + 8) * (lookahead + 8)) return;
         const ahead = rx * fwdX + rz * fwdZ;
         const lat = Math.abs(rx * fwdZ - rz * fwdX);
         if (ahead > 0 && ahead < lookahead && lat < halfWidth) {
@@ -353,6 +354,7 @@ export class TrafficSystem {
 
       car.group.position.set(car.x, 0, car.z);
       car.group.rotation.y = car.heading;
+      car.group.visible = Math.hypot(car.x - px, car.z - pz) < 170;
     }
 
     this.updateWheels();
@@ -360,10 +362,10 @@ export class TrafficSystem {
 
   private updateWheels(): void {
     const offsets = [
-      [-0.85, 1.35],
-      [0.85, 1.35],
-      [-0.85, -1.35],
-      [0.85, -1.35]
+      [-0.76, 1.35],
+      [0.76, 1.35],
+      [-0.76, -1.35],
+      [0.76, -1.35]
     ];
     for (let i = 0; i < this.cars.length; i++) {
       const car = this.cars[i];

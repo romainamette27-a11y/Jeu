@@ -7,6 +7,7 @@ import { PoliceCar } from './vehicle/PoliceCar';
 import type { DriveInput } from './input/InputManager';
 import { TrafficSystem } from './traffic/TrafficSystem';
 import { Pedestrians } from './pedestrians/Pedestrians';
+import { ParkedCars } from './city/ParkedCars';
 import { Dispatch } from './dispatch/Dispatch';
 import { ChaseCamera, FollowTarget, DRIVING_RIG, FOOT_RIG } from './camera/ChaseCamera';
 import { Officer } from './officer/Officer';
@@ -33,6 +34,7 @@ export class Game {
   private sky: SkyAndLights;
   private car: PoliceCar;
   private traffic: TrafficSystem;
+  private parked: ParkedCars;
   private pedestrians: Pedestrians;
   private dispatch: Dispatch;
   private chaseCam: ChaseCamera;
@@ -83,10 +85,13 @@ export class Game {
     this.car = new PoliceCar();
     this.scene.add(this.car.group);
 
-    this.traffic = new TrafficSystem();
+    this.traffic = new TrafficSystem(280);
     this.scene.add(this.traffic.group);
 
-    this.pedestrians = new Pedestrians(40);
+    this.parked = new ParkedCars(84);
+    this.scene.add(this.parked.group);
+
+    this.pedestrians = new Pedestrians(420);
     this.scene.add(this.pedestrians.group);
 
     this.officer.group.visible = false;
@@ -270,6 +275,7 @@ export class Game {
 
     this.minutes = (this.minutes + dt * CONFIG.shift.minutesPerSecond) % 1440;
     this.traffic.update(dt, this.car.pos.x, this.car.pos.y);
+    this.parked.update(this.car.pos.x, this.car.pos.y);
     this.pedestrians.update(dt, this.car.pos.x, this.car.pos.y);
 
     const follow = driving ? this.carFollow : this.officer;

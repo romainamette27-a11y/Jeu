@@ -107,10 +107,10 @@ export class PoliceCar {
     const rimMat = new THREE.MeshStandardMaterial({ color: 0xb9bcc2, roughness: 0.35, metalness: 0.7 });
 
     const positions: [number, number][] = [
-      [-0.95, -1.55],
-      [0.95, -1.55],
-      [-0.95, 1.55],
-      [0.95, 1.55]
+      [-0.78, -1.55],
+      [0.78, -1.55],
+      [-0.78, 1.55],
+      [0.78, 1.55]
     ];
 
     for (const [x, z] of positions) {

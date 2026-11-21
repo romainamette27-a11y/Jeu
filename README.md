@@ -57,6 +57,9 @@ npm run preview    # prévisualise le build
 - [x] **Lot C — Patrouille à pied & interceptions** : sortie du véhicule libre avec commandes de marche,
       remontée près du véhicule, excès de vitesse dynamiques (marqueur jaune, poursuite, interception
       générant un contrôle routier sur place)
+- [x] **Vie urbaine densifiee** : ~420 pietons et ~280 vehicules en circulation (culling par
+      distance pour le framerate), 84 voitures stationnees le long des trottoirs avec parcometres
+      (ecran vert = paye, rouge = expirie), roues de police realignees dans l'axe de la caisse
 - [x] **Retouche graphique** : personnages articulés (policier animé bras/jambes, piétons avec
       yeux, mains, chaussures, tailles variables), carrosseries profilées extrudées (capot,
       pare-brise incliné, vitres en serre-cabine) pour berlines, breaks, utilitaires et POLICE
