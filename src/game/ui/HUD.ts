@@ -22,6 +22,10 @@ export class HUD {
   private rankValue: HTMLElement;
   private bilan: HTMLElement;
   private bilanLines: HTMLElement;
+  private wheel: HTMLElement;
+  private wheelCenter: HTMLElement;
+  private wheelBar: HTMLElement;
+  private wheelLabel: HTMLElement;
 
   constructor() {
     const hud = document.createElement('div');
@@ -120,9 +124,22 @@ export class HUD {
     this.bilan.id = 'bilan';
     this.bilan.classList.add('hidden');
 
+    this.wheel = document.createElement('div');
+    this.wheel.id = 'wheel';
+    this.wheel.classList.add('hidden');
+
+    this.wheelCenter = document.createElement('div');
+    this.wheelCenter.id = 'wheel-center';
+    this.wheelLabel = document.createElement('div');
+    this.wheelLabel.id = 'wheel-label';
+    this.wheelBar = document.createElement('div');
+    this.wheelBar.id = 'wheel-bar';
+    this.wheelCenter.append(this.wheelLabel, this.wheelBar);
+    this.wheel.append(this.wheelCenter);
+
     hud.append(topLeft, topRight, this.gps, speed);
 
-    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel, this.bilan);
+    document.body.append(hud, this.radioPanel, this.hint, this.exitBtn, this.intPanel, this.wheel, this.bilan);
 
     this.rankValue = rankChip.querySelector('#hud-rank')!;
     this.bilanLines = document.createElement('div');
@@ -200,7 +217,8 @@ export class HUD {
     this.hintTimer = window.setTimeout(() => this.hint.classList.remove('visible'), durationMs);
   }
 
-  showExit(handler: (() => void) | null): void {
+  showExit(handler: (() => void) | null, label = '🚨 SORTIR DU VÉHICULE'): void {
+    this.exitBtn.textContent = label;
     if (handler === null) {
       if (this.exitHandler !== null) {
         this.exitHandler = null;
@@ -239,15 +257,50 @@ export class HUD {
 
   setIntActions(actions: readonly { key: string; label: string }[], handler: (key: string) => void): void {
     this.actionHandler = handler;
-    this.intActions.innerHTML = '';
-    for (const action of actions) {
+    this.wheel.querySelectorAll('.wheel-btn').forEach((el) => el.remove());
+
+    if (actions.length === 0) {
+      this.wheel.classList.add('hidden');
+      return;
+    }
+    this.wheel.classList.remove('hidden');
+
+    const size = 320;
+    const radius = size / 2 - 52;
+    actions.forEach((action, i) => {
+      const angle = (-90 + (i * 360) / actions.length) * (Math.PI / 180);
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'int-btn';
-      btn.textContent = action.label;
+      btn.className = 'wheel-btn';
+      const [emoji, ...rest] = action.label.split(' ');
+      const emojiSpan = document.createElement('span');
+      emojiSpan.className = 'wheel-emoji';
+      emojiSpan.textContent = emoji;
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'wheel-text';
+      labelSpan.textContent = rest.join(' ').replace(/ \(\+\d+ XP\)/, '');
+      btn.append(emojiSpan, labelSpan);
+      btn.style.left = `${size / 2 + Math.cos(angle) * radius - 50}px`;
+      btn.style.top = `${size / 2 + Math.sin(angle) * radius - 42}px`;
       btn.addEventListener('click', () => this.actionHandler?.(action.key));
-      this.intActions.append(btn);
-    }
+      this.wheel.append(btn);
+    });
+  }
+
+  showActionProgress(label: string): void {
+    this.wheelLabel.textContent = label.replace(/\(\+?\d+ XP\)/, '').trim();
+    this.wheelBar.style.width = '0%';
+    this.wheel.classList.add('busy');
+  }
+
+  setActionProgress(ratio: number): void {
+    this.wheelBar.style.width = `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`;
+  }
+
+  clearActionProgress(): void {
+    this.wheelLabel.textContent = '';
+    this.wheelBar.style.width = '0%';
+    this.wheel.classList.remove('busy');
   }
 
   setRank(name: string): void {

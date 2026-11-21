@@ -21,6 +21,7 @@ interface TrafficCar {
   heading: number;
   speed: number;
   cruise: number;
+  baseCruise: number;
   dir: Dir;
   nodeK: number;
   nodeJ: number;
@@ -58,8 +59,14 @@ export class TrafficSystem {
   private readonly n = CONFIG.city.blocksPerSide;
   private wheels: THREE.InstancedMesh;
   private wheelDummy = new THREE.Object3D();
+  private speeder: TrafficCar | null = null;
+  private speederState: 'chase' | 'pulling' = 'chase';
+  private speederTimer = 0;
+  private speederCd = 45 + Math.random() * 40;
+  private marker: THREE.Mesh | null = null;
+  onPulledOver: ((x: number, z: number) => void) | null = null;
 
-  constructor(count = 20) {
+  constructor(count = 28) {
     this.buildCarMeshes(count);
     this.wheels = this.buildWheels(count);
     this.group.add(this.wheels);
@@ -158,6 +165,7 @@ export class TrafficSystem {
         heading: Math.atan2(DIRV[d][0], DIRV[d][1]),
         speed: cruise * 0.5,
         cruise,
+        baseCruise: cruise,
         dir: d,
         nodeK: k + DIRV[d][0],
         nodeJ: j + DIRV[d][1],
@@ -177,6 +185,7 @@ export class TrafficSystem {
       heading: 0,
       speed: 0,
       cruise,
+      baseCruise: cruise,
       dir: 0,
       nodeK: 0,
       nodeJ: 0,
@@ -261,7 +270,70 @@ export class TrafficSystem {
     this.setWaypoint(car);
   }
 
+  maybeSpeeder(dt: number, px: number, pz: number): boolean {
+    if (this.speeder) {
+      this.speederTimer += dt;
+      if (this.speederTimer > 32) {
+        this.speeder.cruise = this.speeder.baseCruise;
+        this.releaseMarker();
+        this.speeder = null;
+      }
+      return false;
+    }
+
+    this.speederCd -= dt;
+    if (this.speederCd > 0) return false;
+
+    const candidates = this.cars.filter((car) => {
+      const d = Math.hypot(car.x - px, car.z - pz);
+      return d > 22 && d < 130;
+    });
+    if (candidates.length === 0) return false;
+
+    const car = candidates[Math.floor(Math.random() * candidates.length)];
+    this.speeder = car;
+    this.speederState = 'chase';
+    this.speederTimer = 0;
+    this.speederCd = 90 + Math.random() * 50;
+    car.cruise = car.baseCruise * 1.9;
+
+    const marker = new THREE.Mesh(
+      new THREE.ConeGeometry(0.55, 1.1, 4),
+      new THREE.MeshBasicMaterial({ color: 0xffc23d, transparent: true, opacity: 0.85, depthWrite: false })
+    );
+    marker.rotation.x = Math.PI;
+    marker.position.set(car.x, 3.1, car.z);
+    this.group.add(marker);
+    this.marker = marker;
+    return true;
+  }
+
+  cancelSpeeder(): void {
+    if (this.speeder) {
+      this.speeder.cruise = this.speeder.baseCruise;
+      this.speederState = 'chase';
+      this.speederTimer = 0;
+      this.speeder = null;
+      this.releaseMarker();
+    }
+  }
+
+  private releaseMarker(): void {
+    if (this.marker) {
+      this.group.remove(this.marker);
+      this.marker.geometry.dispose();
+      (this.marker.material as THREE.Material).dispose();
+      this.marker = null;
+    }
+  }
+
   update(dt: number, px: number, pz: number): void {
+    if (this.speeder && this.marker) {
+      const t = performance.now() * 0.001;
+      this.marker.position.set(this.speeder.x, 3.1 + Math.sin(t * 3) * 0.25, this.speeder.z);
+      this.marker.rotation.y = t * 2;
+    }
+
     for (const car of this.cars) {
       const desired = Math.atan2(car.wx - car.x, car.wz - car.z);
       const diff = angleDiff(car.heading, desired);
@@ -291,9 +363,29 @@ export class TrafficSystem {
         check(other.x, other.z, 1.5, 12);
       }
 
+      if (car === this.speeder) {
+        if (this.speederState === 'chase') {
+          const d = Math.hypot(car.x - px, car.z - pz);
+          if (d < 70) this.speederState = 'pulling';
+          target = Math.max(target, car.cruise * 0.25);
+        } else {
+          target = 0;
+          if (car.speed < 0.2) {
+            this.speederState = 'chase';
+            const sx = car.x;
+            const sz = car.z;
+            this.releaseMarker();
+            this.speeder = null;
+            const idx = this.cars.indexOf(car);
+            if (idx !== -1) this.cars.splice(idx, 1);
+            this.onPulledOver?.(sx, sz);
+          }
+        }
+      }
+
       if (car.speed < 0.4) {
         car.waitTime += dt;
-        if (car.waitTime > 2.5) target = Math.max(target, 1.6);
+        if (car.waitTime > 2.5 && car !== this.speeder) target = Math.max(target, 1.6);
       } else {
         car.waitTime = Math.max(0, car.waitTime - dt * 2);
       }

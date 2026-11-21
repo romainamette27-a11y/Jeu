@@ -85,6 +85,46 @@ export class Dispatch {
     }
   }
 
+  spawnCustomCall(typeKey: string, x: number, z: number, message: string): void {
+    const type = CALL_TYPES.find((t) => t.key === typeKey);
+    if (!type) return;
+
+    const beacon = new THREE.Group();
+    const column = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.2, 3.2, 46, 14, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0xffc23d,
+        transparent: true,
+        opacity: 0.28,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+    );
+    column.position.y = 23;
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.4, 4.6, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0xffc23d,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.15;
+    beacon.add(column, ring);
+    beacon.position.set(x, 0, z);
+    this.group.add(beacon);
+
+    this.calls.push({ type, x, z, onSite: false, beacon, ring });
+    this.hud.radioPush('Centrale DCT', message);
+    this.hud.setCalls(this.calls.length);
+    this.sfx.dispatch();
+  }
+
   private spawnCall(minutes: number): void {
     const type = CALL_TYPES[Math.floor(Math.random() * CALL_TYPES.length)];
     const pos = this.pickRoadPosition();

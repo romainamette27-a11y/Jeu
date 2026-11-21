@@ -48,5 +48,12 @@ npm run preview    # prévisualise le build
       déblocages, sauvegarde locale
 - [x] **Phase 5 — Polish** : éclairage nocturne (lampadaires, feux), sons (sirène, radio,
       moteur), optimisation mobile avancée
-- [x] **Lot A — Ville vivante** : 30 piétons qui dambulent sur les trottoirs (détour quand la voiture approche),
+- [x] **Lot A — Ville vivante** : 40 piétons membres articulés (marche animée, cheveux et visages variés)
+      qui déambulent sur les trottoirs (détour quand la voiture approche),
       livrée « POLICE » nationale (bande bleue + typographie), flotte française (berlines, breaks, utilitaires blancs) avec feux avant/arrière
+- [x] **Lot B — Scènes d'intervention réelles** : PNJ posés en scène (blessé allongé, blessé assis,
+      conducteur debout, témoins), épave endommagée, roue d'actions radiale avec durées réelles
+      (barre de progression) et actions enchaînées par type d'appel
+- [x] **Lot C — Patrouille à pied & interceptions** : sortie du véhicule libre avec commandes de marche,
+      remontée près du véhicule, excès de vitesse dynamiques (marqueur jaune, poursuite, interception
+      générant un contrôle routier sur place)

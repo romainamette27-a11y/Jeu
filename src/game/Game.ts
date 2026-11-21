@@ -86,7 +86,7 @@ export class Game {
     this.traffic = new TrafficSystem();
     this.scene.add(this.traffic.group);
 
-    this.pedestrians = new Pedestrians(30);
+    this.pedestrians = new Pedestrians(40);
     this.scene.add(this.pedestrians.group);
 
     this.officer.group.visible = false;
@@ -94,6 +94,9 @@ export class Game {
 
     this.hud = new HUD();
     this.dispatch = new Dispatch(this.scene, this.hud, this.sfx);
+    this.traffic.onPulledOver = (x, z) => {
+      this.dispatch.spawnCustomCall('traffic', x, z, 'Interception confirmée — véhicule arrêté. Va contrôler le conducteur.');
+    };
 
     this.save = loadSave();
     this.xp = this.save.totalXp;
@@ -258,7 +261,11 @@ export class Game {
       this.shiftDistance += Math.abs(this.car.speed) * dt;
     } else {
       this.car.update(dt, this.idleInput);
-      this.intervention.update(dt, this.car);
+      const foot = {
+        move: Math.max(0, this.input.throttle - this.input.brake),
+        turn: this.input.steer
+      };
+      this.intervention.update(dt, this.car, foot);
     }
 
     this.minutes = (this.minutes + dt * CONFIG.shift.minutesPerSecond) % 1440;
@@ -274,9 +281,27 @@ export class Game {
     this.dispatch.update(dt, this.car, this.minutes);
 
     if (driving) {
+      const spawned = this.traffic.maybeSpeeder(dt, this.car.pos.x, this.car.pos.y);
+      if (spawned) {
+        this.hud.radioPush('Centrale DCT', 'Véhicule en excès de vitesse devant toi — intercepte-le !');
+      }
+    }
+
+    if (driving) {
       const target = this.dispatch.target;
       if (target && target.onSite) {
         this.hud.showExit(() => this.intervention.start(this.car, target));
+      } else {
+        this.hud.showExit(
+          () => this.intervention.startPatrol(this.car),
+          '🚶 PATROUILLE À PIED'
+        );
+      }
+    } else if (this.intervention.mode === 'patrol') {
+      const dx = this.car.pos.x - this.officer.x;
+      const dz = this.car.pos.y - this.officer.z;
+      if (Math.hypot(dx, dz) < 4.5) {
+        this.hud.showExit(() => this.intervention.enterCar(this.car), '🚔 REMONTER DANS LE VÉHICULE');
       } else {
         this.hud.showExit(null);
       }
@@ -400,6 +425,7 @@ export class Game {
     this.applySiren(false);
     this.intervention.abort();
     this.dispatch.clearCalls();
+    this.traffic.cancelSpeeder();
 
     this.save.totalXp = this.xp;
     this.save.shifts++;

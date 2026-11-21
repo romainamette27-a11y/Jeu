@@ -7,10 +7,10 @@ export class Officer {
   z = 0;
   heading = 0;
   arrived = true;
+  speed = 0;
 
   private targetX = 0;
   private targetZ = 0;
-  private speed = 0;
   private bob = 0;
 
   constructor() {
@@ -55,6 +55,19 @@ export class Officer {
     this.arrived = false;
   }
 
+  freeMove(dt: number, turn: number, move: number): void {
+    const moving = Math.abs(move) > 0.1;
+    const maxTurn = 3.0;
+    this.heading -= turn * maxTurn * dt * (moving ? 1 : 0.4);
+
+    const target = Math.max(0, Math.min(1, move)) * 3.2;
+    this.speed = target;
+    const step = target * dt;
+    this.x += Math.sin(this.heading) * step;
+    this.z += Math.cos(this.heading) * step;
+    this.arrived = false;
+  }
+
   update(dt: number): void {
     if (!this.group.visible) return;
 
@@ -78,8 +91,9 @@ export class Officer {
       }
     }
 
+    const moving = !this.arrived || this.speed > 0.25;
     this.bob += dt * this.speed * 4.5;
-    const lift = this.arrived ? 0 : Math.abs(Math.sin(this.bob)) * 0.05;
+    const lift = moving ? Math.abs(Math.sin(this.bob)) * 0.05 : 0;
     this.group.position.set(this.x, lift, this.z);
     this.group.rotation.y = this.heading;
   }
