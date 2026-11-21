@@ -37,13 +37,25 @@ export class ChaseCamera {
   private cam: THREE.PerspectiveCamera;
   private cur = new THREE.Vector3();
   private rig: CameraRig = { ...DRIVING_RIG };
+  private userYaw = 0;
+  private userPitch = 0;
+  private lastOrbitAt = -1e9;
 
   constructor(cam: THREE.PerspectiveCamera, target: FollowTarget) {
     this.cam = cam;
     this.snap(target, DRIVING_RIG);
   }
 
+  orbit(dx: number, dy: number): void {
+    this.userYaw -= dx * 0.0045;
+    this.userPitch = Math.max(-0.08, Math.min(1.05, this.userPitch + dy * 0.004));
+    this.lastOrbitAt = performance.now();
+  }
+
   snap(target: FollowTarget, rig: CameraRig = this.rig): void {
+    this.userYaw = 0;
+    this.userPitch = 0;
+    this.lastOrbitAt = -1e9;
     this.rig = { ...rig };
     this.computeDesired(tmpDesired, target, rig);
     this.cur.copy(tmpDesired);
@@ -53,6 +65,14 @@ export class ChaseCamera {
   }
 
   update(dt: number, target: FollowTarget, rig: CameraRig = this.rig): void {
+    if (performance.now() - this.lastOrbitAt > 1600) {
+      const decay = Math.exp(-dt * 1.6);
+      this.userYaw *= decay;
+      this.userPitch *= decay;
+      if (Math.abs(this.userYaw) < 0.004) this.userYaw = 0;
+      if (Math.abs(this.userPitch) < 0.004) this.userPitch = 0;
+    }
+
     this.rig.distance += (rig.distance - this.rig.distance) * Math.min(1, dt * 3);
     this.rig.height += (rig.height - this.rig.height) * Math.min(1, dt * 3);
     this.rig.lookAhead += (rig.lookAhead - this.rig.lookAhead) * Math.min(1, dt * 3);
@@ -67,10 +87,21 @@ export class ChaseCamera {
   }
 
   private computeDesired(out: THREE.Vector3, t: FollowTarget, r: CameraRig): void {
-    out.set(t.x - Math.sin(t.heading) * r.distance, r.height, t.z - Math.cos(t.heading) * r.distance);
+    const yaw = t.heading + this.userYaw;
+    const horiz = Math.cos(this.userPitch) * r.distance;
+    out.set(
+      t.x - Math.sin(yaw) * horiz,
+      r.height + Math.sin(this.userPitch) * r.distance,
+      t.z - Math.cos(yaw) * horiz
+    );
   }
 
   private computeLook(out: THREE.Vector3, t: FollowTarget, r: CameraRig): void {
-    out.set(t.x + Math.sin(t.heading) * r.lookAhead, r.lookHeight, t.z + Math.cos(t.heading) * r.lookAhead);
+    const yaw = t.heading + this.userYaw;
+    out.set(
+      t.x + Math.sin(yaw) * r.lookAhead * Math.cos(this.userPitch),
+      r.lookHeight + Math.sin(this.userPitch) * r.lookAhead * 0.25,
+      t.z + Math.cos(yaw) * r.lookAhead * Math.cos(this.userPitch)
+    );
   }
 }

@@ -69,6 +69,7 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
+    this.renderer.domElement.style.touchAction = 'none';
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 1.0, 1200);
@@ -120,6 +121,11 @@ export class Game {
     this.carFollow.heading = this.car.heading;
     this.chaseCam = new ChaseCamera(this.camera, this.carFollow);
 
+    this.renderer.domElement.addEventListener('pointerdown', this.onOrbitStart);
+    window.addEventListener('pointermove', this.onOrbitMove);
+    window.addEventListener('pointerup', this.onOrbitEnd);
+    window.addEventListener('pointercancel', this.onOrbitEnd);
+
     this.input.attach();
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('pointerdown', this.onFirstGesture);
@@ -133,8 +139,8 @@ export class Game {
 
     this.hud.showHint(
       this.controls
-        ? 'Gauche : volant — À droite : gaz / frein — 🚨 : sirène — Suis la flèche GPS !'
-        : 'ZQSD / Flèches pour conduire — Espace : frein à main — F : sirène — Suis la flèche GPS !',
+        ? 'Gauche : volant — Droite : gaz / frein — Glisse l’écran : caméra — 🚨 : sirène'
+        : 'ZQSD / Flèches pour conduire — Espace : frein à main — F : sirène — Glisse la souris : caméra',
       8000
     );
     this.hud.radioPush('Centrale DCT', 'Bon service, officier. Les appels arrivent sur ta fréquence.');
@@ -176,6 +182,33 @@ export class Game {
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'KeyF') {
       this.applySiren(!this.car.lightsOn);
+    }
+  };
+
+  private orbiting = false;
+  private orbitX = 0;
+  private orbitY = 0;
+
+  private onOrbitStart = (e: PointerEvent) => {
+    if (e.target !== this.renderer.domElement) return;
+    this.orbiting = true;
+    this.orbitX = e.clientX;
+    this.orbitY = e.clientY;
+    this.renderer.domElement.setPointerCapture(e.pointerId);
+  };
+
+  private onOrbitMove = (e: PointerEvent) => {
+    if (!this.orbiting) return;
+    this.chaseCam.orbit(e.clientX - this.orbitX, e.clientY - this.orbitY);
+    this.orbitX = e.clientX;
+    this.orbitY = e.clientY;
+  };
+
+  private onOrbitEnd = (e: PointerEvent) => {
+    if (!this.orbiting) return;
+    this.orbiting = false;
+    if (this.renderer.domElement.hasPointerCapture(e.pointerId)) {
+      this.renderer.domElement.releasePointerCapture(e.pointerId);
     }
   };
 
@@ -345,6 +378,10 @@ export class Game {
 
   dispose(): void {
     cancelAnimationFrame(this.rafId);
+    this.renderer.domElement.removeEventListener('pointerdown', this.onOrbitStart);
+    window.removeEventListener('pointermove', this.onOrbitMove);
+    window.removeEventListener('pointerup', this.onOrbitEnd);
+    window.removeEventListener('pointercancel', this.onOrbitEnd);
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('pointerdown', this.onFirstGesture);
