@@ -31,16 +31,21 @@ export class Pedestrians {
   readonly group = new THREE.Group();
   private peds: Ped[] = [];
 
-  private legGeo = new THREE.BoxGeometry(0.13, 0.55, 0.16);
-  private armGeo = new THREE.BoxGeometry(0.09, 0.48, 0.09);
+  private legGeo = new THREE.BoxGeometry(0.14, 0.58, 0.17);
+  private armGeo = new THREE.BoxGeometry(0.1, 0.5, 0.1);
   private torsoGeo = new THREE.CapsuleGeometry(0.19, 0.5, 3, 8);
   private headGeo = new THREE.SphereGeometry(0.14, 10, 8);
   private hairGeo = new THREE.SphereGeometry(0.148, 10, 6, 0, Math.PI * 2, 0, Math.PI / 1.9);
+  private eyeGeo = new THREE.SphereGeometry(0.022, 6, 5);
+  private shoeGeo = new THREE.BoxGeometry(0.15, 0.08, 0.25);
 
   private skinMats: THREE.MeshStandardMaterial[] = [];
   private shirtMats: THREE.MeshStandardMaterial[] = [];
   private pantsMats: THREE.MeshStandardMaterial[] = [];
   private hairMats: THREE.MeshStandardMaterial[] = [];
+  private eyeMat = new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.4 });
+  private shoeMat = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.9 });
+  private handGeo = new THREE.SphereGeometry(0.05, 6, 5);
 
   constructor(count = 40) {
     for (const color of SKIN) {
@@ -71,6 +76,13 @@ export class Pedestrians {
     const skin = this.pick(this.skinMats);
     const head = new THREE.Mesh(this.headGeo, skin);
     head.position.y = 1.62;
+    const headScale = 0.92 + Math.random() * 0.25;
+    head.scale.set(headScale, headScale, headScale);
+    const eyeL = new THREE.Mesh(this.eyeGeo, this.eyeMat);
+    eyeL.position.set(-0.05, 0.01, 0.125);
+    const eyeR = eyeL.clone();
+    eyeR.position.x = 0.05;
+    head.add(eyeL, eyeR);
     group.add(head);
 
     if (i % 6 !== 0) {
@@ -87,9 +99,19 @@ export class Pedestrians {
     const pantsMat = this.pick(this.pantsMats);
     const legL = new THREE.Mesh(this.legGeo, pantsMat);
     const legR = new THREE.Mesh(this.legGeo, pantsMat);
+    const shoeL = new THREE.Mesh(this.shoeGeo, this.shoeMat);
+    shoeL.position.set(0, -0.52, 0.035);
+    const shoeR = shoeL.clone();
+    legL.add(shoeL);
+    legR.add(shoeR);
     const shirtMat = torso.material as THREE.MeshStandardMaterial;
     const armL = new THREE.Mesh(this.armGeo, shirtMat);
     const armR = new THREE.Mesh(this.armGeo, shirtMat);
+    const handL = new THREE.Mesh(this.handGeo, skin);
+    handL.position.y = -0.52;
+    const handR = handL.clone();
+    armL.add(handL);
+    armR.add(handR);
 
     const legPivotL = new THREE.Group();
     legPivotL.position.set(-0.09, 0.95, 0);
@@ -179,10 +201,10 @@ export class Pedestrians {
     if (moving) {
       ped.phase += dt * ped.speed * 4.6;
       const swing = Math.sin(ped.phase);
-      ped.legL.rotation.x = swing * 0.62;
-      ped.legR.rotation.x = -swing * 0.62;
-      ped.armL.rotation.x = -swing * 0.5;
-      ped.armR.rotation.x = swing * 0.5;
+      ped.legL.rotation.x = swing * 0.7;
+      ped.legR.rotation.x = -swing * 0.7;
+      ped.armL.rotation.x = -swing * 0.58;
+      ped.armR.rotation.x = swing * 0.58;
       ped.torso.rotation.x = 0.05;
       ped.group.position.y = 0.18 + Math.abs(Math.sin(ped.phase)) * 0.035;
     } else {
@@ -239,5 +261,8 @@ export class Pedestrians {
     this.torsoGeo.dispose();
     this.headGeo.dispose();
     this.hairGeo.dispose();
+    this.eyeGeo.dispose();
+    this.shoeGeo.dispose();
+    this.handGeo.dispose();
   }
 }

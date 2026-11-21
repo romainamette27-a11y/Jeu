@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG, gridPitch, linePosition } from '../config';
+import { makeCarBody } from '../vehicle/carShapes';
 
 type Dir = 0 | 1 | 2 | 3;
 
@@ -73,67 +74,10 @@ export class TrafficSystem {
   }
 
   private buildCarMeshes(count: number): void {
-    const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x223347,
-      roughness: 0.2,
-      metalness: 0.5
-    });
-    const headlightMat = new THREE.MeshStandardMaterial({
-      color: 0xd8d3bd,
-      emissive: 0xfff1c4,
-      emissiveIntensity: 0.35,
-      roughness: 0.3
-    });
-    const taillightMat = new THREE.MeshStandardMaterial({
-      color: 0x4a0d12,
-      emissive: 0xff3524,
-      emissiveIntensity: 0.4,
-      roughness: 0.4
-    });
-
     for (let i = 0; i < count; i++) {
-      const group = new THREE.Group();
       const kind = i % 3;
-
-      if (kind === 2) {
-        const bodyMat = new THREE.MeshStandardMaterial({
-          color: 0xe8e8e4,
-          roughness: 0.5,
-          metalness: 0.25
-        });
-        const vanBody = new THREE.Mesh(new THREE.BoxGeometry(1.94, 1.36, 4.7), bodyMat);
-        vanBody.position.y = 0.98;
-        vanBody.castShadow = true;
-        const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.5, 0.08), glassMat);
-        windshield.position.set(0, 1.32, 2.32);
-        const band = new THREE.Mesh(new THREE.BoxGeometry(1.96, 0.34, 4.72), bodyMat);
-        band.position.y = 0.5;
-        const lights = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, 0.08), headlightMat);
-        lights.position.set(0, 0.88, 2.36);
-        const tails = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, 0.08), taillightMat);
-        tails.position.set(0, 0.88, -2.36);
-        group.add(vanBody, windshield, band, lights, tails);
-      } else {
-        const bodyMat = new THREE.MeshStandardMaterial({
-          color: PALETTE[i % PALETTE.length],
-          roughness: 0.45,
-          metalness: 0.35
-        });
-        const isBreak = kind === 1;
-        const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, isBreak ? 4.6 : 4.2), bodyMat);
-        body.position.y = 0.66;
-        body.castShadow = true;
-        const cabin = new THREE.Mesh(
-          new THREE.BoxGeometry(1.62, 0.52, isBreak ? 2.8 : 1.9),
-          glassMat
-        );
-        cabin.position.set(0, 1.2, isBreak ? -0.3 : 0.15);
-        const lights = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.13, 0.07), headlightMat);
-        lights.position.set(0, 0.78, isBreak ? 2.31 : 2.11);
-        const tails = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.13, 0.07), taillightMat);
-        tails.position.set(0, 0.78, isBreak ? -2.31 : -2.11);
-        group.add(body, cabin, lights, tails);
-      }
+      const color = kind === 2 ? 0xe8e8e4 : PALETTE[i % PALETTE.length];
+      const group = makeCarBody(kind === 0 ? 'sedan' : kind === 1 ? 'estate' : 'van', color);
 
       this.group.add(group);
 

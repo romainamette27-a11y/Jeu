@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
+import { carPaintGeometry } from './carShapes';
 
 export interface DriveInput {
   steer: number;
@@ -37,65 +38,52 @@ export class PoliceCar {
   private buildBody(): void {
     const white = new THREE.MeshStandardMaterial({ color: 0xe9e9ea, roughness: 0.4, metalness: 0.25 });
     const black = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.6, metalness: 0.3 });
-    const glass = new THREE.MeshStandardMaterial({
-      color: 0x1d2b3a,
-      roughness: 0.15,
-      metalness: 0.6,
-      transparent: true,
-      opacity: 0.92
-    });
 
     const livery = new THREE.MeshStandardMaterial({
       map: makeLiveryTexture(),
       roughness: 0.4,
       metalness: 0.25
     });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.62, 4.6), [
-      livery,
-      livery,
-      white,
-      black,
-      white,
-      white
-    ]);
-    body.position.y = 0.72;
+
+    const body = new THREE.Mesh(carPaintGeometry('sedan'), white);
     body.castShadow = true;
     this.group.add(body);
 
-    const lowerTrim = new THREE.Mesh(new THREE.BoxGeometry(1.94, 0.2, 4.64), black);
-    lowerTrim.position.y = 0.5;
+    const decal = new THREE.PlaneGeometry(4.2, 0.34);
+    const decalL = new THREE.Mesh(decal, livery);
+    decalL.position.set(-0.846, 0.7, 0);
+    decalL.rotation.y = -Math.PI / 2;
+    const decalR = new THREE.Mesh(decal, livery);
+    decalR.position.set(0.846, 0.7, 0);
+    decalR.rotation.y = Math.PI / 2;
+    this.group.add(decalL, decalR);
+
+    const lowerTrim = new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.14, 4.06), black);
+    lowerTrim.position.y = 0.36;
     this.group.add(lowerTrim);
 
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.16, 1.5), black);
-    hood.position.set(0, 1.04, 1.5);
-    hood.castShadow = true;
-    this.group.add(hood);
-
-    const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.16, 1.1), black);
-    trunk.position.set(0, 1.04, -1.72);
-    trunk.castShadow = true;
-    this.group.add(trunk);
-
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.58, 2.2), glass);
-    cabin.position.set(0, 1.32, 0.12);
-    cabin.castShadow = true;
-    this.group.add(cabin);
-
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.1, 1.5), white);
-    roof.position.set(0, 1.62, 0.12);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.08, 1.5), white);
+    roof.position.set(0, 1.66, 0.12);
     roof.castShadow = true;
     this.group.add(roof);
 
-    const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.26, 0.34), black);
-    bumper.position.set(0, 0.5, 2.42);
+    const bumper = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.26, 0.34), black);
+    bumper.position.set(0, 0.44, 2.3);
     this.group.add(bumper);
     const bumperRear = bumper.clone();
-    bumperRear.position.z = -2.42;
+    bumperRear.position.z = -2.3;
     this.group.add(bumperRear);
 
-    const grille = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 0.06), black);
-    grille.position.set(0, 0.8, 2.31);
+    const grille = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.18, 0.06), black);
+    grille.position.set(0, 0.66, 2.2);
     this.group.add(grille);
+
+    const headlights = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.12, 0.06), new THREE.MeshStandardMaterial({ color: 0xd8d3bd, emissive: 0xfff1c4, emissiveIntensity: 0.35, roughness: 0.3 }));
+    headlights.position.set(0, 0.78, 2.19);
+    this.group.add(headlights);
+    const taillights = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.12, 0.06), new THREE.MeshStandardMaterial({ color: 0x4a0d12, emissive: 0xff3524, emissiveIntensity: 0.4, roughness: 0.4 }));
+    taillights.position.set(0, 0.78, -2.17);
+    this.group.add(taillights);
   }
 
   private buildWheels(): void {

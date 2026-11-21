@@ -4,6 +4,7 @@ import type { Officer } from '../officer/Officer';
 import type { PoliceCar } from '../vehicle/PoliceCar';
 import type { HUD } from '../ui/HUD';
 import type { InterventionAction } from './InterventionAction';
+import { makeCarBody } from '../vehicle/carShapes';
 
 export type InterventionMode = 'driving' | 'patrol' | 'toScene' | 'menu' | 'chase' | 'return';
 
@@ -159,13 +160,19 @@ export class InterventionSystem {
       body.castShadow = true;
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), skin);
       head.position.y = 1.58;
-      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.24), pants);
-      legs.position.y = 0.34;
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 5), pants);
+      eyeL.position.set(-0.05, 1.6, 0.13);
+      const eyeR = eyeL.clone();
+      eyeR.position.x = 0.05;
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.18), pants);
+      legL.position.set(-0.1, 0.34, 0);
+      const legR = legL.clone();
+      legR.position.x = 0.1;
       const armL = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.15), clothes);
       armL.position.set(0.34, 1.0, 0);
       const armR = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.15), clothes);
       armR.position.set(-0.34, 1.0, 0);
-      group.add(body, head, legs, armL, armR);
+      group.add(body, head, eyeL, eyeR, legL, legR, armL, armR);
     }
 
     group.position.set(x, 0, z);
@@ -245,21 +252,13 @@ export class InterventionSystem {
 
   private buildCivilCar(x: number, z: number): void {
     const colors = [0xbfc3c9, 0x5c6470, 0x1d2b4a, 0x742c34, 0x54626e, 0xd8d3bd];
-    const paint = new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)], roughness: 0.45, metalness: 0.2 });
-    const glass = new THREE.MeshStandardMaterial({ color: 0x1a2126, roughness: 0.3, metalness: 0.4 });
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.9 });
 
-    const group = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.58, 4.2), paint);
-    body.position.y = 0.68;
-    body.castShadow = true;
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.5, 2.0), glass);
-    cabin.position.set(0, 1.2, -0.2);
-    group.add(body, cabin);
+    const group = makeCarBody(Math.random() < 0.5 ? 'sedan' : 'estate', colors[Math.floor(Math.random() * colors.length)]);
 
-    for (const wx of [-0.82, 0.82]) {
+    for (const wx of [-0.8, 0.8]) {
       for (const wz of [-1.35, 1.35]) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.2, 12), wheelMat);
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 12), wheelMat);
         wheel.rotation.z = Math.PI / 2;
         wheel.position.set(wx, 0.32, wz);
         group.add(wheel);
