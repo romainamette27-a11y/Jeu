@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
-import { carPaintGeometry } from './carShapes';
+import { carPaintGeometry, carCabinGeometry } from './carShapes';
 
 export interface DriveInput {
   steer: number;
@@ -62,8 +62,20 @@ export class PoliceCar {
     lowerTrim.position.y = 0.36;
     this.group.add(lowerTrim);
 
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.08, 1.5), white);
-    roof.position.set(0, 1.66, 0.12);
+    const glass = new THREE.MeshStandardMaterial({
+      color: 0x1d2b3a,
+      roughness: 0.15,
+      metalness: 0.6,
+      transparent: true,
+      opacity: 0.85
+    });
+    const cabin = new THREE.Mesh(carCabinGeometry('sedan'), glass);
+    cabin.position.set(0, 0.94, -0.18);
+    cabin.castShadow = true;
+    this.group.add(cabin);
+
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.08, 1.3), white);
+    roof.position.set(0, 1.66, -0.2);
     roof.castShadow = true;
     this.group.add(roof);
 
@@ -123,7 +135,7 @@ export class PoliceCar {
       new THREE.BoxGeometry(1.2, 0.09, 0.34),
       new THREE.MeshStandardMaterial({ color: 0x15171c })
     );
-    base.position.set(0, 1.72, 0.12);
+    base.position.set(0, 1.72, -0.15);
     this.group.add(base);
 
     const red = new THREE.MeshStandardMaterial({
@@ -138,9 +150,9 @@ export class PoliceCar {
     });
 
     const redMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.3), red);
-    redMesh.position.set(-0.3, 1.83, 0.12);
+    redMesh.position.set(-0.3, 1.83, -0.15);
     const blueMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.3), blue);
-    blueMesh.position.set(0.3, 1.83, 0.12);
+    blueMesh.position.set(0.3, 1.83, -0.15);
     this.group.add(redMesh, blueMesh);
 
     return [red, blue];

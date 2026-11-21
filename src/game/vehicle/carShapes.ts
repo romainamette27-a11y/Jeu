@@ -69,6 +69,10 @@ export function carPaintGeometry(kind: CarKind): THREE.BufferGeometry {
   return extrude(bodyProfile(kind), kind === 'van' ? 1.58 : 1.5, kind === 'van' ? 0.09 : 0.08);
 }
 
+export function carCabinGeometry(kind: CarKind): THREE.BufferGeometry {
+  return extrude(cabinProfile(kind), 1.3, 0.05);
+}
+
 export function makeCarBody(kind: CarKind, color: number): THREE.Group {
   const group = new THREE.Group();
 
