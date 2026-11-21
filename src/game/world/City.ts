@@ -9,6 +9,14 @@ export interface ColliderRect {
 }
 
 export class City {
+  private facadeMats: THREE.MeshStandardMaterial[] = [];
+
+  setNight(glow: number): void {
+    const g = Math.max(0, Math.min(1, glow));
+    for (const mat of this.facadeMats) {
+      mat.emissiveIntensity = g * 1.5;
+    }
+  }
   readonly group = new THREE.Group();
   readonly colliders: ColliderRect[] = [];
 
@@ -95,7 +103,9 @@ export class City {
     const slabGeo = new THREE.BoxGeometry(CONFIG.city.blockSize, 0.18, CONFIG.city.blockSize);
     const slabMat = new THREE.MeshStandardMaterial({ color: 0x86898f, roughness: 0.9 });
     const roofMat = new THREE.MeshStandardMaterial({ color: 0x5f6266, roughness: 0.95 });
-    const windowTex = makeWindowTexture();
+    const windowTex = makeWindowTexture(false);
+    const windowEmissiveTex = makeWindowTexture(true);
+    this.facadeMats.length = 0;
     const palette = [0xb9b4aa, 0xa39e94, 0xb59f8d, 0xa8adb5, 0x9b8f83, 0xc0b09c];
 
     const n = CONFIG.city.blocksPerSide;
@@ -125,15 +135,25 @@ export class City {
             const bx = cx + qx * (CONFIG.city.blockSize / 4);
             const bz = cz + qz * (CONFIG.city.blockSize / 4);
 
+            const repeatX = Math.max(1, Math.round(w / 5));
+            const repeatY = Math.max(1, Math.round(h / 4));
             const facadeTex = windowTex.clone();
-            facadeTex.repeat.set(Math.max(1, Math.round(w / 5)), Math.max(1, Math.round(h / 4)));
+            facadeTex.repeat.set(repeatX, repeatY);
             facadeTex.needsUpdate = true;
+
+            const facadeEmissive = windowEmissiveTex.clone();
+            facadeEmissive.repeat.set(repeatX, repeatY);
+            facadeEmissive.needsUpdate = true;
 
             const facadeMat = new THREE.MeshStandardMaterial({
               map: facadeTex,
+              emissiveMap: facadeEmissive,
+              emissive: 0xffdd99,
+              emissiveIntensity: 0,
               color: palette[(i * n + j * 3 + Math.round(w)) % palette.length],
               roughness: 0.85
             });
+            this.facadeMats.push(facadeMat);
 
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [
               facadeMat,
@@ -181,16 +201,22 @@ function mergeDashes(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
   return merged;
 }
 
-function makeWindowTexture(): THREE.Texture {
+function makeWindowTexture(emissive: boolean): THREE.Texture {
   const size = 128;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
 
-  ctx.fillStyle = '#c9cbd0';
+  if (emissive) {
+    ctx.fillStyle = '#000000';
+  } else {
+    ctx.fillStyle = '#c9cbd0';
+  }
   ctx.fillRect(0, 0, size, size);
 
+  const shades = ['#33445c', '#3d5270', '#46608a', '#2c3a50'];
+  const warm = ['#ffd98c', '#ffe7b3', '#e8c273', '#fff2cf'];
   const cols = 4;
   const rows = 4;
   const pad = 7;
@@ -199,11 +225,18 @@ function makeWindowTexture(): THREE.Texture {
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const lit = Math.random() < 0.06;
-      const shades = ['#33445c', '#3d5270', '#46608a', '#2c3a50'];
-      ctx.fillStyle = lit ? '#d9c793' : shades[Math.floor(Math.random() * shades.length)];
       const x = pad + c * (winW + pad);
       const y = pad + r * (winH + pad);
+
+      if (emissive) {
+        if (Math.random() < 0.42) {
+          ctx.fillStyle = warm[Math.floor(Math.random() * warm.length)];
+          ctx.fillRect(x, y, winW, winH);
+        }
+        continue;
+      }
+
+      ctx.fillStyle = shades[Math.floor(Math.random() * shades.length)];
       ctx.fillRect(x, y, winW, winH);
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(x, y, winW, winH * 0.35);

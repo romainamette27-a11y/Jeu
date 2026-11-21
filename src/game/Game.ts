@@ -15,6 +15,7 @@ import { loadSave, writeSave, rankFor, type SaveData } from './progression/Progr
 import { InputManager } from './input/InputManager';
 import { VirtualControls } from './input/VirtualControls';
 import { Siren } from './audio/Siren';
+import { Engine } from './audio/Engine';
 import { Sfx } from './audio/Sfx';
 import { HUD } from './ui/HUD';
 
@@ -37,6 +38,7 @@ export class Game {
   private controls: VirtualControls | null = null;
   private hud: HUD;
   private siren = new Siren();
+  private engine = new Engine();
   private sfx = new Sfx();
   private officer = new Officer();
   private intervention: InterventionSystem;
@@ -157,6 +159,7 @@ export class Game {
 
   private onFirstGesture = () => {
     this.sfx.unlock();
+    this.engine.unlock();
   };
 
   private applySiren(on: boolean): void {
@@ -181,9 +184,11 @@ export class Game {
     if (document.hidden) {
       this.running = false;
       this.siren.suspend();
+      this.engine.suspend();
     } else {
       this.running = true;
       this.siren.resume();
+      this.engine.resume();
       this.clock.getDelta();
     }
   };
@@ -200,6 +205,7 @@ export class Game {
     if (this.offShift) {
       this.sky.update(this.car.group.position, this.minutes);
       this.lamps.update(1 - this.sky.brightness);
+      this.city.setNight(1 - this.sky.brightness);
       this.chaseCam.update(dt, this.carFollow, DRIVING_RIG);
       this.hud.update(this.minutes, 0, false);
       this.renderer.render(this.scene, this.camera);
@@ -224,6 +230,7 @@ export class Game {
     this.chaseCam.update(dt, follow, driving ? DRIVING_RIG : FOOT_RIG);
     this.sky.update(this.car.group.position, this.minutes);
     this.lamps.update(1 - this.sky.brightness);
+    this.city.setNight(1 - this.sky.brightness);
 
     this.dispatch.update(dt, this.car, this.minutes);
 
@@ -245,6 +252,7 @@ export class Game {
     this.updateGpsTarget(driving ? this.carFollow : this.officer);
 
     this.hud.update(this.minutes, this.car.speed, this.car.speed < -0.2);
+    this.engine.setLevel(Math.abs(this.car.speed) / CONFIG.car.maxSpeed, driving);
 
     if (this.minutes >= CONFIG.shift.endMinutes) {
       this.endShift();
@@ -337,6 +345,7 @@ export class Game {
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.input.detach();
     this.siren.dispose();
+    this.engine.dispose();
     this.intervention.dispose();
     this.dispatch.dispose();
     this.renderer.dispose();

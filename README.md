@@ -46,7 +46,7 @@ npm run preview    # prévisualise le build
       vols, arrestations — menus d'action (verbaliser, fouiller, menotter, renforts)
 - [x] **Phase 4 — Progression réalistique** : fin de shift + bilan, XP, grades,
       déblocages, sauvegarde locale
-- [ ] **Phase 5 — Polish** : éclairage nocturne (lampadaires, feux), sons (sirène, radio,
+- [x] **Phase 5 — Polish** : éclairage nocturne (lampadaires, feux), sons (sirène, radio,
       moteur), optimisation mobile avancée
 
 ## CI

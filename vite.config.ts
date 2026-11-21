@@ -4,6 +4,13 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2022',
-    assetsInlineLimit: 0
+    assetsInlineLimit: 0,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three']
+        }
+      }
+    }
   }
 });
