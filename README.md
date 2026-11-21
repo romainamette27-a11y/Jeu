@@ -57,3 +57,6 @@ npm run preview    # prévisualise le build
 - [x] **Lot C — Patrouille à pied & interceptions** : sortie du véhicule libre avec commandes de marche,
       remontée près du véhicule, excès de vitesse dynamiques (marqueur jaune, poursuite, interception
       générant un contrôle routier sur place)
+- [x] **Lot C — Contrôles de zone** : appel « Contrôle de zone » (barrage routier) avec scène complète
+      (cônes, panneaux rayés, panneau POLICE, véhicules arrêtés, conducteurs) et chaîne d'actions :
+      déploiement du barrage, contrôle des conducteurs, PV, interpellation sur mandat

@@ -20,6 +20,7 @@ const CALL_TYPES: CallType[] = [
   { key: 'missing', caller: 'Opérations', label: 'Personne disparue', detail: 'Signalement de proximité, personne âgée', xp: 50, urgency: 'mid' },
   { key: 'noise', caller: 'Centrale DCT', label: 'Nuisance sonore', detail: 'Tapage nocturne signalé par un riverain', xp: 25, urgency: 'low' },
   { key: 'parking', caller: 'Centrale DCT', label: 'Stationnement gênant', detail: 'Véhicule bloquant la voie de circulation', xp: 25, urgency: 'low' },
+  { key: 'barrage', caller: 'Opérations', label: 'Contrôle de zone', detail: 'Mise en place d\u2019un barrage routier sur demande', xp: 70, urgency: 'mid' },
   { key: 'suspicious', caller: 'Opérations', label: 'Comportement suspect', detail: 'Individu essayant plusieurs portières de véhicules', xp: 70, urgency: 'mid' }
 ];
 

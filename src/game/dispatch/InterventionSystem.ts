@@ -67,7 +67,8 @@ const ACTION_DURATIONS: Record<string, number> = {
   tow: 1800,
   pv: 3000,
   warn: 1500,
-  arrest: 2600
+  arrest: 2600,
+  deploy: 2600
 };
 
 interface ActiveIntervention {
@@ -174,6 +175,102 @@ export class InterventionSystem {
     return { group, suspect, x, z, heading: group.rotation.y, fleeDir: 0, fleeSpeed: 0 };
   }
 
+  private buildBarricade(x: number, z: number): void {
+    const root = new THREE.Group();
+
+    const coneMat = new THREE.MeshStandardMaterial({ color: 0xff7a1f, roughness: 0.6 });
+    const bandMat = new THREE.MeshStandardMaterial({ color: 0xf2f3f5, roughness: 0.6 });
+    for (let i = -1; i <= 1; i++) {
+      const cone = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.05, 0.46), coneMat);
+      base.position.y = 0.025;
+      const mid = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.2, 0.6, 10), coneMat);
+      mid.position.y = 0.35;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.17, 0.11, 10), bandMat);
+      band.position.y = 0.38;
+      cone.add(base, mid, band);
+      cone.position.set(i * 2.5, 0, z - x);
+      root.add(cone);
+    }
+
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0xf2f3f5, roughness: 0.5 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xc22b2b, roughness: 0.6 });
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.8 });
+    for (let i = -1; i <= 1; i += 2) {
+      const panel = new THREE.Group();
+      for (let j = 0; j < 5; j++) {
+        const seg = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.24, 0.05), j % 2 === 0 ? redMat : panelMat);
+        seg.position.set(-0.68 + j * 0.34, 0.78, 0);
+        panel.add(seg);
+      }
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.78, 0.06), legMat);
+      legL.position.set(-0.7, 0.39, 0);
+      const legR = legL.clone();
+      legR.position.x = 0.7;
+      panel.add(legL, legR);
+      panel.position.set(i * 4.2, 0, z - x);
+      panel.rotation.y = Math.PI / 2;
+      root.add(panel);
+    }
+
+    const sign = new THREE.Group();
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#f2f3f5';
+    ctx.fillRect(0, 0, 256, 64);
+    ctx.fillStyle = '#153a7a';
+    ctx.font = 'bold 40px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('POLICE', 128, 34);
+    const tex = new THREE.CanvasTexture(canvas);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.48), new THREE.MeshBasicMaterial({ map: tex }));
+    face.position.y = 0.85;
+    const faceBack = face.clone();
+    faceBack.rotation.y = Math.PI;
+    const sLegL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.85, 0.06), legMat);
+    sLegL.position.set(-0.7, 0.42, 0);
+    const sLegR = sLegL.clone();
+    sLegR.position.x = 0.7;
+    sign.add(face, faceBack, sLegL, sLegR);
+    sign.position.set(0, 0, z - x);
+    sign.rotation.y = Math.PI / 2;
+    root.add(sign);
+
+    root.position.x = x;
+    this.npcRoot.add(root);
+  }
+
+  private buildCivilCar(x: number, z: number): void {
+    const colors = [0xbfc3c9, 0x5c6470, 0x1d2b4a, 0x742c34, 0x54626e, 0xd8d3bd];
+    const paint = new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)], roughness: 0.45, metalness: 0.2 });
+    const glass = new THREE.MeshStandardMaterial({ color: 0x1a2126, roughness: 0.3, metalness: 0.4 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.9 });
+
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.58, 4.2), paint);
+    body.position.y = 0.68;
+    body.castShadow = true;
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.5, 2.0), glass);
+    cabin.position.set(0, 1.2, -0.2);
+    group.add(body, cabin);
+
+    for (const wx of [-0.82, 0.82]) {
+      for (const wz of [-1.35, 1.35]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.2, 12), wheelMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, 0.32, wz);
+        group.add(wheel);
+      }
+    }
+
+    group.position.set(x, 0, z);
+    group.rotation.y = (Math.random() < 0.5 ? 0 : Math.PI / 2) + (Math.random() - 0.5) * 0.12;
+    this.npcRoot.add(group);
+  }
+
   private buildWreck(x: number, z: number): void {
     const group = new THREE.Group();
     const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a4e55, roughness: 0.7, metalness: 0.3 });
@@ -230,6 +327,14 @@ export class InterventionSystem {
       }
       case 'parking': {
         npcs.push(this.buildNpc('stand', false, sx + 1.5, sz - 1.2));
+        break;
+      }
+      case 'barrage': {
+        this.buildBarricade(sx, sz);
+        this.buildCivilCar(sx + 3.1, sz - 5.6);
+        this.buildCivilCar(sx - 3.0, sz - 7.4);
+        npcs.push(this.buildNpc('stand', false, sx + 4.4, sz - 4.2));
+        npcs.push(this.buildNpc('stand', false, sx - 4.3, sz - 5.8));
         break;
       }
     }
@@ -376,6 +481,31 @@ export class InterventionSystem {
         break;
       }
 
+      case 'barrage': {
+        if (key === 'deploy') {
+          s.secured = true;
+          give(25);
+          this.hud.intLog('\ud83d\udea7 Barrage d\u00e9ploy\u00e9 \u2014 c\u00f4nes pos\u00e9s, voies canalis\u00e9es, panneau en place.', 'good');
+        } else if (key === 'id') {
+          s.checked = true;
+          if (Math.random() < 0.35) {
+            s.wanted = true;
+            this.hud.intLog('\u26a0\ufe0f Un conducteur est sous le coup d\'un mandat de recherche ! Interpellation possible.', 'bad');
+          } else {
+            give(10);
+            this.hud.intLog('\u2713 Papiers et charges v\u00e9rifi\u00e9s des deux c\u00f4t\u00e9s, tout est en ordre.', 'good');
+          }
+        } else if (key === 'pv') {
+          give(30);
+          this.hud.intLog('\ud83d\udcc4 PV du contr\u00f4le dress\u00e9, les conducteurs r\u00e9gularisent.', 'good');
+        } else if (key === 'arrest') {
+          s.arrested = true;
+          give(80);
+          this.hud.intLog('\u26d3\ufe0f Mandat ex\u00e9cut\u00e9 \u2014 individu menott\u00e9 et plac\u00e9 en garde \u00e0 vue.', 'good');
+        }
+        break;
+      }
+
       case 'suspicious': {
         if (key === 'id') {
           s.checked = true;
@@ -443,6 +573,13 @@ export class InterventionSystem {
 
       case 'parking':
         if (!s.secured) actions.push({ key: 'tow', label: '\ud83d\udefb Demander la fourrière (+25 XP)' });
+        break;
+
+      case 'barrage':
+        if (!s.secured) actions.push({ key: 'deploy', label: '\ud83d\udea7 D\u00e9ployer le barrage (+25 XP)' });
+        if (s.secured && !s.checked) actions.push({ key: 'id', label: '\ud83e\udeaa Contr\u00f4ler les conducteurs' });
+        if (s.checked && s.wanted && !s.arrested) actions.push({ key: 'arrest', label: '\u26d3\ufe0f Proc\u00e9der \u00e0 l\u2019interpellation' });
+        if (s.secured && s.checked && !s.arrested) actions.push({ key: 'pv', label: '\ud83d\udcc4 Dresser les PV (+30 XP)' });
         break;
 
       case 'suspicious':
