@@ -38,6 +38,7 @@ interface ActiveIntervention {
   call: Call;
   npcs: Npc[];
   s: IntState;
+  used: Set<string>;
 }
 
 export class InterventionSystem {
@@ -125,7 +126,7 @@ export class InterventionSystem {
     this.officer.group.visible = true;
     this.officer.walkTo(sx, sz + 4, 2.4);
 
-    this.current = { call, npcs, s: freshState() };
+    this.current = { call, npcs, s: freshState(), used: new Set() };
     this.mode = 'toScene';
 
     this.hud.showExit(null);
@@ -236,7 +237,8 @@ export class InterventionSystem {
 
     actions.push({ key: 'finish', label: '✅ Clôturer l\u2019intervention' });
     actions.push({ key: 'exit', label: '🔺 Remonter dans le véhicule' });
-    return actions;
+    const used = this.current.used;
+    return actions.filter((a) => a.key === 'finish' || a.key === 'exit' || !used.has(a.key));
   }
 
   private openMenu(): void {
@@ -254,6 +256,7 @@ export class InterventionSystem {
       this.returnToCarSignal = true;
       return;
     }
+    if (this.current.used.has(key)) return;
     if (key === 'finish') {
       this.finishedCall = call;
       this.hud.intLog('Retour au véhicule pour terminer l’intervention.', 'info');
@@ -384,6 +387,7 @@ export class InterventionSystem {
       }
     }
 
+    this.current.used.add(key);
     refresh();
   }
 
