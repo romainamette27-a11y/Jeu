@@ -48,7 +48,5 @@ npm run preview    # prévisualise le build
       déblocages, sauvegarde locale
 - [x] **Phase 5 — Polish** : éclairage nocturne (lampadaires, feux), sons (sirène, radio,
       moteur), optimisation mobile avancée
-
-## CI
-
-GitHub Actions : `npm ci && npm run build` sur chaque push / PR.
+- [x] **Lot A — Ville vivante** : 30 piétons qui dambulent sur les trottoirs (détour quand la voiture approche),
+      livrée « POLICE » nationale (bande bleue + typographie), flotte française (berlines, breaks, utilitaires blancs) avec feux avant/arrière

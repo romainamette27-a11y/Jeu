@@ -6,6 +6,7 @@ import { SkyAndLights } from './world/SkyAndLights';
 import { PoliceCar } from './vehicle/PoliceCar';
 import type { DriveInput } from './input/InputManager';
 import { TrafficSystem } from './traffic/TrafficSystem';
+import { Pedestrians } from './pedestrians/Pedestrians';
 import { Dispatch } from './dispatch/Dispatch';
 import { ChaseCamera, FollowTarget, DRIVING_RIG, FOOT_RIG } from './camera/ChaseCamera';
 import { Officer } from './officer/Officer';
@@ -32,6 +33,7 @@ export class Game {
   private sky: SkyAndLights;
   private car: PoliceCar;
   private traffic: TrafficSystem;
+  private pedestrians: Pedestrians;
   private dispatch: Dispatch;
   private chaseCam: ChaseCamera;
   private input = new InputManager();
@@ -82,6 +84,9 @@ export class Game {
 
     this.traffic = new TrafficSystem();
     this.scene.add(this.traffic.group);
+
+    this.pedestrians = new Pedestrians(30);
+    this.scene.add(this.pedestrians.group);
 
     this.officer.group.visible = false;
     this.scene.add(this.officer.group);
@@ -225,6 +230,7 @@ export class Game {
 
     this.minutes = (this.minutes + dt * CONFIG.shift.minutesPerSecond) % 1440;
     this.traffic.update(dt, this.car.pos.x, this.car.pos.y);
+    this.pedestrians.update(dt, this.car.pos.x, this.car.pos.y);
 
     const follow = driving ? this.carFollow : this.officer;
     this.chaseCam.update(dt, follow, driving ? DRIVING_RIG : FOOT_RIG);

@@ -45,7 +45,19 @@ export class PoliceCar {
       opacity: 0.92
     });
 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.62, 4.6), white);
+    const livery = new THREE.MeshStandardMaterial({
+      map: makeLiveryTexture(),
+      roughness: 0.4,
+      metalness: 0.25
+    });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.62, 4.6), [
+      livery,
+      livery,
+      white,
+      black,
+      white,
+      white
+    ]);
     body.position.y = 0.72;
     body.castShadow = true;
     this.group.add(body);
@@ -208,4 +220,35 @@ export class PoliceCar {
     this.barRed.emissiveIntensity = toggle ? 2.6 : 0.05;
     this.barBlue.emissiveIntensity = toggle ? 0.05 : 2.6;
   }
+}
+
+function makeLiveryTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 144;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#f2f3f5';
+  ctx.fillRect(0, 0, 1024, 144);
+
+  ctx.fillStyle = '#16338f';
+  ctx.fillRect(0, 96, 1024, 34);
+
+  ctx.save();
+  ctx.translate(392, 74);
+  ctx.transform(1, 0, -0.18, 1, 0, 0);
+  ctx.fillStyle = '#16338f';
+  ctx.font = 'italic 900 62px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('POLICE', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = '#16338f';
+  ctx.fillRect(88, 44, 442, 5);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
 }
