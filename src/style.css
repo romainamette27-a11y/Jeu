@@ -414,24 +414,33 @@ body.int-open #controls.active {
   }
 }
 
-/* ---------- Intervention ---------- */
+/* ---------- Bouton action (bord droit) ---------- */
 #int-exit {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(170px + var(--safe-b));
-  z-index: 14;
-  padding: 12px 22px;
-  border-radius: 999px;
-  border: 1px solid rgba(110, 235, 120, 0.6);
+  right: calc(14px + var(--safe-r));
+  top: 50%;
+  transform: translateY(-50%);
+  bottom: auto;
+  z-index: 22;
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(110, 235, 120, 0.6);
   background: rgba(10, 24, 18, 0.8);
-  color: #9fffae;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.08em;
+  color: #ffffff;
+  font-size: 27px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: int-exit-pulse 1.6s ease-in-out infinite;
+}
+#int-exit:active {
+  border-color: rgba(110, 235, 120, 0.95);
+  background: rgba(16, 38, 26, 0.9);
 }
 #int-exit.hidden {
   display: none;

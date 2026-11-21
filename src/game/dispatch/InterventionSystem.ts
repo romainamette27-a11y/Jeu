@@ -263,9 +263,8 @@ export class InterventionSystem {
 
     this.mode = 'patrol';
     this.hud.showExit(null);
-    this.hud.showIntervention('Patrouille à pied');
-    this.hud.intLog('Patrouille libre. Utilise les commandes pour marcher, remonte dans le véhicule quand tu veux.', 'info');
-    this.hud.setIntActions([], () => {});
+    this.hud.closeIntervention();
+    this.hud.showHint('Patrouille à pied — Gaz : avancer, Frein : reculer, Volant : tourner', 7000);
   }
 
   enterCar(car: PoliceCar): void {
@@ -612,6 +611,7 @@ export class InterventionSystem {
     this.returnToCarSignal = false;
     this.hud.closeIntervention();
     this.hud.clearActionProgress();
+    this.hud.setIntActions([], () => {});
     this.onFinish(call, t);
   }
 
@@ -666,6 +666,7 @@ export class InterventionSystem {
     this.officer.group.visible = false;
     this.hud.closeIntervention();
     this.hud.clearActionProgress();
+    this.hud.setIntActions([], () => {});
     this.mode = 'driving';
   }
 

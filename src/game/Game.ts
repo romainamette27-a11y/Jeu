@@ -292,16 +292,13 @@ export class Game {
       if (target && target.onSite) {
         this.hud.showExit(() => this.intervention.start(this.car, target));
       } else {
-        this.hud.showExit(
-          () => this.intervention.startPatrol(this.car),
-          '🚶 PATROUILLE À PIED'
-        );
+        this.hud.showExit(() => this.intervention.startPatrol(this.car), '🚶');
       }
     } else if (this.intervention.mode === 'patrol') {
       const dx = this.car.pos.x - this.officer.x;
       const dz = this.car.pos.y - this.officer.z;
       if (Math.hypot(dx, dz) < 4.5) {
-        this.hud.showExit(() => this.intervention.enterCar(this.car), '🚔 REMONTER DANS LE VÉHICULE');
+        this.hud.showExit(() => this.intervention.enterCar(this.car), '🚔');
       } else {
         this.hud.showExit(null);
       }

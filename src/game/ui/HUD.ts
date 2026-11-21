@@ -105,7 +105,7 @@ export class HUD {
     this.exitBtn = document.createElement('button');
     this.exitBtn.id = 'int-exit';
     this.exitBtn.type = 'button';
-    this.exitBtn.textContent = '🚨 SORTIR DU VÉHICULE';
+    this.exitBtn.textContent = '🚨';
     this.exitBtn.classList.add('hidden');
     this.exitBtn.addEventListener('click', () => this.exitHandler?.());
 
@@ -217,8 +217,8 @@ export class HUD {
     this.hintTimer = window.setTimeout(() => this.hint.classList.remove('visible'), durationMs);
   }
 
-  showExit(handler: (() => void) | null, label = '🚨 SORTIR DU VÉHICULE'): void {
-    this.exitBtn.textContent = label;
+  showExit(handler: (() => void) | null, icon = '🚨'): void {
+    this.exitBtn.textContent = icon;
     if (handler === null) {
       if (this.exitHandler !== null) {
         this.exitHandler = null;
