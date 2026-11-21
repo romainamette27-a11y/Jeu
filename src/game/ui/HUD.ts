@@ -159,16 +159,18 @@ export class HUD {
     acceptBtn.className = 'offer-accept';
     acceptBtn.textContent = '✅ ACCEPTER';
     acceptBtn.addEventListener('click', () => {
+      const onAccept = this.offerAccept;
       this.hideCallOffer();
-      this.offerAccept?.();
+      onAccept?.();
     });
     const declineBtn = document.createElement('button');
     declineBtn.type = 'button';
     declineBtn.className = 'offer-decline';
     declineBtn.textContent = '❌ REFUSER';
     declineBtn.addEventListener('click', () => {
+      const onDecline = this.offerDecline;
       this.hideCallOffer();
-      this.offerDecline?.();
+      onDecline?.();
     });
     offerBtns.append(acceptBtn, declineBtn);
     this.offer.append(this.offerHead, this.offerDetail, this.offerTimer, offerBtns);
