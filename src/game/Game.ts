@@ -262,7 +262,7 @@ export class Game {
     } else {
       this.car.update(dt, this.idleInput);
       const foot = {
-        move: Math.max(0, this.input.throttle - this.input.brake),
+        move: this.input.throttle - this.input.brake,
         turn: this.input.steer
       };
       this.intervention.update(dt, this.car, foot);

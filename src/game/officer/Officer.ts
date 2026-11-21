@@ -60,12 +60,14 @@ export class Officer {
     const maxTurn = 3.0;
     this.heading -= turn * maxTurn * dt * (moving ? 1 : 0.4);
 
-    const target = Math.max(0, Math.min(1, move)) * 3.2;
-    this.speed = target;
-    const step = target * dt;
+    const target = Math.max(-1, Math.min(1, move));
+    this.speed = target * 3.2 * (target < 0 ? 0.6 : 1);
+    const step = this.speed * dt;
     this.x += Math.sin(this.heading) * step;
     this.z += Math.cos(this.heading) * step;
-    this.arrived = false;
+    this.targetX = this.x;
+    this.targetZ = this.z;
+    this.arrived = true;
   }
 
   update(dt: number): void {
@@ -91,7 +93,7 @@ export class Officer {
       }
     }
 
-    const moving = !this.arrived || this.speed > 0.25;
+    const moving = !this.arrived || Math.abs(this.speed) > 0.25;
     this.bob += dt * this.speed * 4.5;
     const lift = moving ? Math.abs(Math.sin(this.bob)) * 0.05 : 0;
     this.group.position.set(this.x, lift, this.z);
