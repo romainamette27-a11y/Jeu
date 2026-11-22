@@ -1,8 +1,4 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { CONFIG } from './config';
 import { makeEnvTexture } from './world/EnvSky';
 import { City } from './world/City';
@@ -30,7 +26,6 @@ const tmpVec = new THREE.Vector3();
 
 export class Game {
   private renderer: THREE.WebGLRenderer;
-  private composer: EffectComposer;
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
   private clock = new THREE.Clock();
@@ -87,13 +82,6 @@ export class Game {
     this.scene.environment = pmrem.fromEquirectangular(makeEnvTexture()).texture;
     this.scene.environmentIntensity = 0.55;
     pmrem.dispose();
-
-    const composer = new EffectComposer(this.renderer);
-    composer.addPass(new RenderPass(this.scene, this.camera));
-    composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.28, 0.55, 1.0));
-    composer.addPass(new OutputPass());
-    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.composer = composer;
 
     this.city = new City();
     this.scene.add(this.city.group);
@@ -243,7 +231,6 @@ export class Game {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.composer.setSize(window.innerWidth, window.innerHeight);
   };
 
   private onVisibility = () => {
@@ -274,7 +261,7 @@ export class Game {
       this.city.setNight(1 - this.sky.brightness);
       this.chaseCam.update(dt, this.carFollow, DRIVING_RIG);
       this.hud.update(this.minutes, 0, false);
-      this.composer.render();
+      this.renderer.render(this.scene, this.camera);
       return;
     }
 
@@ -364,7 +351,7 @@ export class Game {
       this.endShift();
     }
 
-    this.composer.render();
+    this.renderer.render(this.scene, this.camera);
   };
 
   private updateGpsTarget(anchor: FollowTarget): void {
